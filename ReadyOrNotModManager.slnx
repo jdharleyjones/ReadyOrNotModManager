@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ReadyOrNotModManager.App/ReadyOrNotModManager.App.csproj" />
+  <Project Path="ReadyOrNotModManager.Core/ReadyOrNotModManager.Core.csproj" />
+  <Project Path="ReadyOrNotModManager.Tests/ReadyOrNotModManager.Tests.csproj" />
+</Solution>
