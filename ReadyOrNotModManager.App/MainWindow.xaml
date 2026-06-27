@@ -296,7 +296,7 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <ContentPresenter Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                                        <ContentPresenter TextElement.Foreground="{DynamicResource TextBrush}" Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" VerticalAlignment="Center" RecognizesAccessKey="True"/>
                                         <Path Grid.Column="1" Data="M 0 0 L 4 4 L 8 0 Z" Fill="{DynamicResource MutedBrush}" Width="8" Height="5" Stretch="Fill" Margin="12,0,0,0" VerticalAlignment="Center"/>
                                     </Grid>
                                 </Border>
@@ -538,14 +538,16 @@
                                     <TextBlock Text="Paste a Nexus mod or collection URL, then queue, import, or deploy without leaving the dashboard." Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,12"/>
                                     <TextBox x:Name="UrlBox" Tag="input Nexus URL here..." ToolTip="Paste a Ready or Not mod or collection URL"/>
                                     <DockPanel LastChildFill="True">
-                                        <Button Content="Run Game" Click="RunGame_Click" DockPanel.Dock="Right" HorizontalAlignment="Right" Style="{StaticResource DeployButton}"/>
+                                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
+                                            <Button Content="Nexus Mods" Click="OpenReadyOrNotModsPage_Click" Style="{StaticResource ActionButton}"/>
+                                            <Button Content="Nexus Collections" Click="OpenReadyOrNotCollectionsPage_Click" Style="{StaticResource SpecialButton}"/>
+                                            <Button Content="Run Game" Click="RunGame_Click" Style="{StaticResource DeployButton}"/>
+                                        </StackPanel>
                                         <WrapPanel>
                                             <Button Content="Add Nexus URL" Click="AddUrl_Click" Tag="{Binding ElementName=UrlBox}" Style="{StaticResource ActionButton}"/>
                                             <Button Content="Import Archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
                                             <Button Content="Deploy all downloaded" Click="DeployDownloaded_Click" Style="{StaticResource DeployButton}"/>
-                                            <Button Content="Show Modpacks" Click="ModpacksNav_Click" Style="{StaticResource SpecialButton}"/>
-                                            <Button Content="Nexus Mods" Click="OpenReadyOrNotModsPage_Click" Style="{StaticResource ActionButton}"/>
-                                            <Button Content="Nexus Collections" Click="OpenReadyOrNotCollectionsPage_Click" Style="{StaticResource SpecialButton}"/>
+                                            <Button Content="Show Local Modpacks" Click="ShowLocalModpacks_Click" Style="{StaticResource SpecialButton}"/>
                                             <Button Content="Open Mods Folder" Click="OpenModsFolder_Click" Style="{StaticResource ActionButton}"/>
                                             <Button Content="Open Game Folder" Click="OpenGameFolder_Click" Style="{StaticResource ActionButton}"/>
                                         </WrapPanel>
@@ -610,7 +612,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBox x:Name="QueueUrlBox" Tag="input Nexus URL here..." Margin="0,0,10,0" ToolTip="Paste a Ready or Not mod or collection URL"/>
                                 <Button Grid.Column="1" Content="Add" Click="AddUrl_Click" Tag="{Binding ElementName=QueueUrlBox}" Style="{StaticResource PrimaryButton}" Margin="0,0,18,0"/>
-                                <TextBox x:Name="QueueSearchBox" Grid.Column="2" Margin="0,0,10,0" ToolTip="Search queued mods" TextChanged="QueueFilter_Changed"/>
+                                <TextBox x:Name="QueueSearchBox" Grid.Column="2" Tag="search mods" Margin="0,0,10,0" ToolTip="Search queued mods" TextChanged="QueueFilter_Changed"/>
                                 <ComboBox x:Name="QueueStatusFilterBox" Grid.Column="3" Margin="0,0,10,0" SelectionChanged="QueueFilter_Changed"/>
                                 <TextBlock x:Name="QueueSummaryText" Grid.Column="4" Text="0 items" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" FontWeight="SemiBold"/>
                             </Grid>

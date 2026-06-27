@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.3.1`
+Version: `1.3.2`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -54,7 +54,7 @@ Use **Modpacks** to save the currently installed/deployed mods as a local profil
 
 Long download and deploy operations report overall progress in the bottom status bar. Failed items are skipped so the rest of the queue can continue.
 
-Version 1.3.1 polishes the dashboard cards, darkens themed dropdowns, adds direct Nexus Mods and Collections dashboard links, and changes modpack saves/updates to snapshot only installed manifest records. Version 1.3.0 redesigns the WPF shell as a modern tactical operations dashboard with layered dark gradients, subtle glows, glassy cards, stronger sidebar active states, structured activity rows, settings section cards, queue status badges, search/filter controls, and a compact status dock.
+Version 1.3.2 makes **Show Local Modpacks** open both the local modpack folder and the in-app Modpacks page, moves Nexus dashboard links beside Run Game on the right, adds a search watermark on the Mods page, and improves themed dropdown text contrast. Version 1.3.1 polishes the dashboard cards, darkens themed dropdowns, adds direct Nexus Mods and Collections dashboard links, and changes modpack saves/updates to snapshot only installed manifest records.
 
 Use the **Colour scheme** selector in Settings to switch between Tactical default, Dark mode, Light mode, Claude palette, Codex palette, Purple gradient, and Hacker themes. The selected theme is saved locally and applied on future launches.
 

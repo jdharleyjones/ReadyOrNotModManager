@@ -1,5 +1,13 @@
 # Release Notes
 
+## 1.3.2
+
+- Rename the dashboard modpack action to **Show Local Modpacks**.
+- Make **Show Local Modpacks** open the configured local modpack library folder in File Explorer and navigate to the in-app Modpacks page.
+- Move the Nexus Mods and Nexus Collections dashboard buttons to the right action group while keeping Run Game furthest right.
+- Add a `search mods` watermark to the Mods page search input.
+- Force selected ComboBox text to use the current theme text brush so filter dropdown labels stay readable.
+
 ## 1.3.1
 
 - Align dashboard card icons to the left of their labels and show connected Nexus accounts as a small `Correct:` label above the username.

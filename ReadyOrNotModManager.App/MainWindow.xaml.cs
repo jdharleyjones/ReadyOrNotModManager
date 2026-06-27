@@ -375,6 +375,15 @@ public partial class MainWindow : Window
         SetStatus("Opened Ready or Not Nexus collections page.");
     }
 
+    private void ShowLocalModpacks_Click(object sender, RoutedEventArgs e)
+    {
+        SaveSettings();
+        Directory.CreateDirectory(_settings.ProfileLibraryDirectory);
+        OpenFolder(_settings.ProfileLibraryDirectory);
+        ShowPage(ModpacksPage, "Modpacks", "Save, load, and switch between local mod sets");
+        SetStatus("Opened local modpacks folder and Modpacks page.");
+    }
+
     private void BrowseDownloadDirectory_Click(object sender, RoutedEventArgs e)
     {
         if (TryChooseFolder(DownloadDirectoryBox.Text, out var selected))
