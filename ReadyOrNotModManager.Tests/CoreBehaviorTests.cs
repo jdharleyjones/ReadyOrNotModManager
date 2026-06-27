@@ -696,6 +696,54 @@ public sealed class CoreBehaviorTests
         Assert.Equal("install-2", remove.InstallId);
     }
 
+    [Theory]
+    [InlineData("Queued", VisualTone.Warning, "Queued")]
+    [InlineData("Downloaded", VisualTone.Info, "Downloaded")]
+    [InlineData("Missing archive", VisualTone.Warning, "Missing")]
+    [InlineData("Missing zip", VisualTone.Warning, "Missing")]
+    [InlineData("Deployed", VisualTone.Success, "Deployed")]
+    [InlineData("Failed - see errors", VisualTone.Danger, "Error")]
+    [InlineData("Something custom", VisualTone.Neutral, "Something custom")]
+    public void QueueStatusVisual_MapsKnownStatuses(string status, VisualTone tone, string label)
+    {
+        var visual = QueueStatusVisual.FromStatus(status);
+
+        Assert.Equal(tone, visual.Tone);
+        Assert.Equal(label, visual.Label);
+    }
+
+    [Theory]
+    [InlineData("Download failed for Broken", VisualTone.Danger)]
+    [InlineData("Imported 2 archive file(s).", VisualTone.Info)]
+    [InlineData("Selected installed mods uninstalled.", VisualTone.Warning)]
+    [InlineData("Activated modpack: Tactical", VisualTone.Warning)]
+    [InlineData("Story overhaul deployed", VisualTone.Success)]
+    public void RecentActivityVisual_MapsActivitySeverity(string text, VisualTone expectedTone)
+    {
+        var item = new RecentActivityItem(new DateTimeOffset(2026, 6, 27, 14, 5, 0, TimeSpan.Zero), text);
+        var expectedTime = item.TimestampUtc.ToLocalTime().ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+
+        var visual = RecentActivityVisual.FromActivity(item);
+
+        Assert.Equal(expectedTone, visual.Tone);
+        Assert.Equal(text, visual.Text);
+        Assert.Equal(expectedTime, visual.TimeText);
+    }
+
+    [Theory]
+    [InlineData("Detected", DashboardStatusKind.Game, VisualTone.Success)]
+    [InlineData("Not detected", DashboardStatusKind.Game, VisualTone.Danger)]
+    [InlineData("Connected: Tester", DashboardStatusKind.Nexus, VisualTone.Success)]
+    [InlineData("Not tested", DashboardStatusKind.Nexus, VisualTone.Warning)]
+    [InlineData("Missing key", DashboardStatusKind.Nexus, VisualTone.Danger)]
+    public void DashboardStatusVisual_MapsConnectionStates(string status, DashboardStatusKind kind, VisualTone expectedTone)
+    {
+        var visual = DashboardStatusVisual.FromStatus(kind, status);
+
+        Assert.Equal(expectedTone, visual.Tone);
+        Assert.False(string.IsNullOrWhiteSpace(visual.HelperText));
+    }
+
     [Fact]
     public void ThemeManager_ProvidesNamedThemesAndFallsBackToDefault()
     {

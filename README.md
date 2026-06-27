@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.2.7`
+Version: `1.3.0`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -38,9 +38,9 @@ The executable will be written to `publish\win-x64`.
 
 The app stores settings, logs, manifests, and queue data under `%LOCALAPPDATA%\ReadyOrNotModManager`; the API key is protected with Windows user-scope DPAPI. These files are local to each Windows user and are not included in the GitHub repository or portable release zip. Deployed files are tracked in a local install manifest so selected mods can be uninstalled later.
 
-The main dashboard shows game detection, Nexus connection, installed mod count, pending queue count, recent activity, and common quick actions. Recent activity includes the same useful status messages shown in the bottom status area, such as added mods, collection imports, archive imports, profile actions, and deployment results.
+The main dashboard shows game detection, Nexus connection, installed mod count, pending queue count, recent activity, and common quick actions. Recent activity is shown as structured event rows with timestamps, icons, and status colour.
 
-The Queue page has its own Nexus URL input and action buttons. Button colours follow the action type: blue for download, green for deploy, red for delete/uninstall/clear, steel-blue for add/import/open, and brass for profile or special actions.
+The Queue page has a Nexus URL toolbar, search, status filter, queue summary, status badges, and grouped action buttons. Button colours follow the action type: blue for normal/info, green for success/deploy/run game, amber for warning/modpacks, red for destructive/error, and grey for inactive.
 
 Use **Remove selected** on the Queue page to remove accidental or duplicate queue entries without deleting downloaded archives or uninstalling deployed files.
 
@@ -54,7 +54,7 @@ Use **Modpacks** to save the current queue as a local profile, load a profile ba
 
 Long download and deploy operations report overall progress in the bottom status bar. Failed items are skipped so the rest of the queue can continue.
 
-Version 1.2.7 hides the progress bar until work is running, adds an optional automatic Nexus API test on launch, and adds a purple gradient theme. Version 1.2.6 makes colour schemes visibly repaint the shell, sidebar, panels, inputs, and table surfaces with gradient panel backgrounds. Version 1.2.5 fixed a 1.2.4 startup crash caused by frozen WPF theme brushes. Version 1.2.4 added queue cleanup, persistent colour themes, modpack rename support, dashboard update status, a polished Downloads WIP marker, and dashboard quick-action layout improvements.
+Version 1.3.0 redesigns the WPF shell as a modern tactical operations dashboard with layered dark gradients, subtle glows, glassy cards, stronger sidebar active states, structured activity rows, settings section cards, queue status badges, search/filter controls, and a compact status dock. Version 1.2.7 hides the progress bar until work is running, adds an optional automatic Nexus API test on launch, and adds a purple gradient theme.
 
 Use the **Colour scheme** selector in Settings to switch between Tactical default, Dark mode, Light mode, Claude palette, Codex palette, Purple gradient, and Hacker themes. The selected theme is saved locally and applied on future launches.
 

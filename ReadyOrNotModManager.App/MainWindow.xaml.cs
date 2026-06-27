@@ -1,10 +1,12 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using MahApps.Metro.IconPacks;
 using ReadyOrNotModManager.Core.Archives;
@@ -35,6 +37,7 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<ErrorLogEntry> _errors = [];
     private readonly LocalSettingsStore _settingsStore;
     private readonly string _appDataDirectory;
+    private readonly ICollectionView _queueView;
     private LocalSettings _settings = new();
     private string _lastNexusStatus = "Not tested";
     private bool _loadingSettings;
@@ -45,7 +48,11 @@ public partial class MainWindow : Window
         InitializeComponent();
         _appDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ReadyOrNotModManager");
         _settingsStore = new LocalSettingsStore(_appDataDirectory);
-        QueueGrid.ItemsSource = _queue;
+        _queueView = CollectionViewSource.GetDefaultView(_queue);
+        _queueView.Filter = QueueFilter;
+        QueueGrid.ItemsSource = _queueView;
+        QueueStatusFilterBox.ItemsSource = new[] { "All statuses", "Queued", "Downloaded", "Missing", "Deployed", "Error" };
+        QueueStatusFilterBox.SelectedIndex = 0;
         InstalledModsGrid.ItemsSource = _installedMods;
         ProfilesGrid.ItemsSource = _profiles;
         ErrorsGrid.ItemsSource = _errors;
@@ -140,23 +147,41 @@ public partial class MainWindow : Window
     {
         var gameOk = ReadyOrNotPaths.LooksLikeInstallDirectory(_settings.ReadyOrNotDirectory);
         var gameStatus = gameOk ? "Detected" : "Not detected";
+        var gameVisual = DashboardStatusVisual.FromStatus(DashboardStatusKind.Game, gameStatus);
         RailGameStatusText.Text = gameStatus;
         SetRailStatusIcon(RailGameStatusIcon, gameOk ? RailStatusState.Connected : RailStatusState.Disconnected);
         DashboardGameStatusText.Text = gameStatus;
+        DashboardGameHelperText.Text = gameVisual.HelperText;
+        DashboardGameIcon.Kind = gameVisual.Icon;
+        DashboardGameIcon.Foreground = ToneBrushes.ForTone(gameVisual.Tone);
         var nexusStatus = string.IsNullOrWhiteSpace(_settings.ApiKey) ? "Missing key" : _lastNexusStatus;
+        var nexusVisual = DashboardStatusVisual.FromStatus(DashboardStatusKind.Nexus, nexusStatus);
         RailNexusStatusText.Text = nexusStatus;
         SetRailStatusIcon(RailNexusStatusIcon, GetNexusRailStatus(nexusStatus));
         DashboardNexusStatusText.Text = nexusStatus;
+        DashboardNexusHelperText.Text = nexusVisual.HelperText;
+        DashboardNexusIcon.Kind = nexusVisual.Icon;
+        DashboardNexusIcon.Foreground = ToneBrushes.ForTone(nexusVisual.Tone);
         DashboardUpdateStatusText.Text = string.IsNullOrWhiteSpace(DashboardUpdateStatusText.Text)
             ? $"Current: v{GetCurrentVersion()}"
             : DashboardUpdateStatusText.Text;
+        ApplyUpdateVisual(DashboardUpdateStatusText.Text);
 
         var summary = DashboardSummaryFactory.Create(CreateManifestStore().Load(), _queue, CreateErrorLogStore().Load(), CreateActivityLogStore().Load());
         InstalledModCountText.Text = summary.InstalledModCount.ToString();
         PendingQueueCountText.Text = summary.PendingQueueCount.ToString();
         RecentActivityList.ItemsSource = summary.RecentActivity.Count == 0
-            ? [new RecentActivityItem(DateTimeOffset.UtcNow, "No recent activity yet")]
-            : summary.RecentActivity;
+            ? [RecentActivityVisual.FromActivity(new RecentActivityItem(DateTimeOffset.UtcNow, "No recent activity yet"))]
+            : summary.RecentActivity.Select(RecentActivityVisual.FromActivity).ToArray();
+        RefreshQueueView();
+    }
+
+    private void ApplyUpdateVisual(string status)
+    {
+        var updateVisual = DashboardStatusVisual.FromStatus(DashboardStatusKind.Update, status);
+        DashboardUpdateHelperText.Text = updateVisual.HelperText;
+        DashboardUpdateIcon.Kind = updateVisual.Icon;
+        DashboardUpdateIcon.Foreground = ToneBrushes.ForTone(updateVisual.Tone);
     }
 
     private void SetRailStatusIcon(PackIconMaterial icon, RailStatusState status)
@@ -197,7 +222,19 @@ public partial class MainWindow : Window
         page.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150)));
         PageTitleText.Text = title;
         PageSubtitleText.Text = subtitle;
+        SetActiveNavigation(page);
         RefreshShellData();
+    }
+
+    private void SetActiveNavigation(FrameworkElement page)
+    {
+        DashboardNavButton.Tag = page == DashboardPage ? "Active" : null;
+        ModsNavButton.Tag = page == ModsPage ? "Active" : null;
+        QueueNavButton.Tag = page == QueuePage ? "Active" : null;
+        ModpacksNavButton.Tag = page == ModpacksPage ? "Active" : null;
+        DownloadsNavButton.Tag = page == DownloadsPage ? "Active" : null;
+        SettingsNavButton.Tag = page == SettingsPage ? "Active" : null;
+        LogsNavButton.Tag = page == LogsPage ? "Active" : null;
     }
 
     private void DashboardNav_Click(object sender, RoutedEventArgs e) => ShowPage(DashboardPage, "Dashboard", "Ready or Not mod deployment overview");
@@ -213,6 +250,42 @@ public partial class MainWindow : Window
     private void SettingsNav_Click(object sender, RoutedEventArgs e) => ShowPage(SettingsPage, "Settings", "Connection, folders, and advanced options");
 
     private void LogsNav_Click(object sender, RoutedEventArgs e) => ShowPage(LogsPage, "Logs/Errors", "Download and deployment failures");
+
+    private void QueueFilter_Changed(object sender, RoutedEventArgs e)
+    {
+        RefreshQueueView();
+    }
+
+    private bool QueueFilter(object item)
+    {
+        if (item is not ModQueueItem queueItem)
+        {
+            return false;
+        }
+
+        var search = QueueSearchBox?.Text?.Trim() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(search)
+            && !queueItem.ModName.Contains(search, StringComparison.OrdinalIgnoreCase)
+            && !queueItem.ArchivePath.Contains(search, StringComparison.OrdinalIgnoreCase)
+            && !queueItem.Status.Contains(search, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var filter = QueueStatusFilterBox?.SelectedItem as string;
+        if (string.IsNullOrWhiteSpace(filter) || filter == "All statuses")
+        {
+            return true;
+        }
+
+        return QueueStatusVisual.FromStatus(queueItem.Status).Label.Equals(filter, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void RefreshQueueView()
+    {
+        _queueView.Refresh();
+        QueueSummaryText.Text = $"{_queueView.Cast<object>().Count()} shown / {_queue.Count} total";
+    }
 
     private async Task CheckForUpdatesAsync()
     {
@@ -231,6 +304,7 @@ public partial class MainWindow : Window
             AppUpdateStatus.UpdateAvailable => $"Current: v{GetCurrentVersion()} | {result.Message}",
             _ => $"Current: v{GetCurrentVersion()} | Unable to check"
         };
+        ApplyUpdateVisual(DashboardUpdateStatusText.Text);
     }
 
     private static Version GetCurrentVersion()

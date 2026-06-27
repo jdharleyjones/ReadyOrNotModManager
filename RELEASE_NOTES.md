@@ -1,5 +1,15 @@
 # Release Notes
 
+## 1.3.0
+
+- Redesign the WPF shell as a modern dark tactical operations dashboard.
+- Add layered gradient background lighting, subtle radial glows, vignette shading, glassy cards, rounded panels, borders, and soft shadows.
+- Improve sidebar spacing, hover states, icon alignment, and active navigation state.
+- Redesign dashboard cards with icons, larger values, helper text, and structured recent activity rows.
+- Split Settings into Nexus Connection, Game Folders, Appearance, Advanced, and Danger Zone cards.
+- Add Queue toolbar search/status filtering, queue summary, dark table headers, hover rows, and coloured status badges.
+- Add UI-only visual mapping helpers for queue statuses, recent activity, and dashboard status cards.
+
 ## 1.2.7
 
 - Hide the progress bar until an operation reports progress.
