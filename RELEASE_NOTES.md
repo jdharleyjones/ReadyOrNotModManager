@@ -1,5 +1,14 @@
 # Release Notes
 
+## 1.2.3
+
+- Add a Queue page Nexus URL input and Add Nexus URL button.
+- Add semantic button colours for add/import/open, download, deploy, destructive, and modpack/special actions.
+- Rename Dashboard deploy to Deploy all downloaded and make it deploy all archived queue items regardless of selected rows.
+- Add Dashboard quick actions for Show Modpacks and Run Game.
+- Add persistent recent activity based on status messages, errors, and deployed manifest records.
+- Add a custom redistributable app icon for the released executable.
+
 ## 1.2.2
 
 - Fix deployment identity so multiple selected manual/imported archives no longer replace each other.

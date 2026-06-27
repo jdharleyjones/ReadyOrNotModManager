@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.2.2`
+Version: `1.2.3`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -32,13 +32,15 @@ The executable will be written to `publish\win-x64`.
    - Use **Get API key** to open the Nexus account API access page.
    - Use **Test Connection** to validate the key.
    - Use **Auto-detect Game Folder** or choose the Ready or Not install folder manually.
-2. Use the dashboard quick actions to add Nexus URLs, import archives, deploy the queue, or open game folders.
+2. Use the dashboard quick actions to add Nexus URLs, import archives, deploy all downloaded queue items, open mod folders, show modpacks, or run the game.
 3. Use the navigation sidebar for Dashboard, Mods, Queue, Modpacks, Downloads, Settings, and Logs/Errors.
 4. Edit API/folder settings later from **Settings**. Use **Reset setup wizard** there to rerun the guided setup flow.
 
 The app stores settings under `%LOCALAPPDATA%\ReadyOrNotModManager`; the API key is protected with Windows user-scope DPAPI. Deployed files are tracked in a local install manifest so selected mods can be uninstalled later.
 
-The main dashboard shows game detection, Nexus connection, installed mod count, pending queue count, recent activity, and common quick actions. Setup fields are no longer permanently shown in the sidebar after configuration.
+The main dashboard shows game detection, Nexus connection, installed mod count, pending queue count, recent activity, and common quick actions. Recent activity includes the same useful status messages shown in the bottom status area, such as added mods, collection imports, archive imports, profile actions, and deployment results.
+
+The Queue page has its own Nexus URL input and action buttons. Button colours follow the action type: blue for download, green for deploy, red for delete/uninstall/clear, steel-blue for add/import/open, and brass for profile or special actions.
 
 The downloader supports ZIP, RAR, 7z, and `.7zip` archive aliases. If Nexus serves a RAR or 7z file when the queue expected a zip, the app detects the real archive type and corrects the saved extension.
 
@@ -50,7 +52,7 @@ Use **Modpacks** to save the current queue as a local profile, load a profile ba
 
 Long download and deploy operations report overall progress in the bottom status bar. Failed items are skipped so the rest of the queue can continue.
 
-Version 1.2.2 fixes deployment identity so selected manual imports and multiple Nexus files from the same mod page deploy together instead of replacing each other. The sidebar now shows game/Nexus connection status with clear icons, table headers are higher contrast, and deployment work runs in the background so progress can update while archives are copied.
+Version 1.2.3 adds dashboard and queue workflow polish, a **Run Game** shortcut, persistent recent activity, and a custom redistributable app icon.
 
 Use **Errors** to review failed download/deploy items. The error page can open the Nexus page, game folder, archive folder, or copy a manual-fix note for the selected failure.
 

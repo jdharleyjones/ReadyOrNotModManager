@@ -584,6 +584,115 @@ public sealed class CoreBehaviorTests
     }
 
     [Fact]
+    public void ActivityLogStore_PersistsRecentMessagesNewestFirst()
+    {
+        var path = Path.Combine(CreateTempDirectory(), "activity-log.json");
+        var store = new ActivityLogStore(path);
+
+        store.Append("Imported 2 archive file(s).", new DateTimeOffset(2026, 6, 27, 12, 0, 0, TimeSpan.Zero));
+        store.Append("Added 36 collection item(s).", new DateTimeOffset(2026, 6, 27, 12, 5, 0, TimeSpan.Zero));
+
+        var entries = new ActivityLogStore(path).Load().Entries;
+
+        Assert.Equal(["Added 36 collection item(s).", "Imported 2 archive file(s)."], entries.Select(entry => entry.Message).ToArray());
+    }
+
+    [Fact]
+    public void ActivityLogStore_ClearDeletesSavedMessages()
+    {
+        var path = Path.Combine(CreateTempDirectory(), "activity-log.json");
+        var store = new ActivityLogStore(path);
+        store.Append("Imported 2 archive file(s).");
+
+        store.Clear();
+
+        Assert.Empty(new ActivityLogStore(path).Load().Entries);
+    }
+
+    [Fact]
+    public void DashboardSummaryFactory_IncludesActivityLogMessages()
+    {
+        var manifest = new InstallManifest
+        {
+            Records =
+            [
+                new InstalledModRecord { ModName = "Installed", InstalledAtUtc = new DateTimeOffset(2026, 6, 27, 12, 0, 0, TimeSpan.Zero) }
+            ]
+        };
+        var queue = Array.Empty<ModQueueItem>();
+        var errorLog = new ErrorLog
+        {
+            Entries =
+            [
+                new ErrorLogEntry { Operation = "Deploy", ModName = "Broken", TimestampUtc = new DateTimeOffset(2026, 6, 27, 12, 10, 0, TimeSpan.Zero) }
+            ]
+        };
+        var activityLog = new ActivityLog
+        {
+            Entries =
+            [
+                new ActivityLogEntry { Message = "Imported 2 archive file(s).", TimestampUtc = new DateTimeOffset(2026, 6, 27, 12, 20, 0, TimeSpan.Zero) }
+            ]
+        };
+
+        var summary = DashboardSummaryFactory.Create(manifest, queue, errorLog, activityLog);
+
+        Assert.Equal("Imported 2 archive file(s).", summary.RecentActivity[0].Text);
+        Assert.Equal("Deploy failed for Broken", summary.RecentActivity[1].Text);
+        Assert.Equal("Installed deployed", summary.RecentActivity[2].Text);
+    }
+
+    [Fact]
+    public void QueueDeploymentPlanner_SelectsOnlyDownloadedItems()
+    {
+        var selected = QueueDeploymentPlanner.GetDeployableDownloadedItems(
+            [
+                new ModQueueItem { ModName = "Alpha", ArchivePath = "C:\\Mods\\Alpha.zip", Status = "Downloaded" },
+                new ModQueueItem { ModName = "Bravo", ArchivePath = "", Status = "Queued" },
+                new ModQueueItem { ModName = "Charlie", ArchivePath = "C:\\Mods\\Charlie.7z", Status = "Imported archive" }
+            ]);
+
+        Assert.Equal(["Alpha", "Charlie"], selected.Select(item => item.ModName).ToArray());
+    }
+
+    [Fact]
+    public void ReadyOrNotLauncher_PrefersSteamLaunch()
+    {
+        var root = CreateTempDirectory();
+
+        var result = ReadyOrNotLauncher.Resolve(root, preferSteam: true);
+
+        Assert.True(result.CanLaunch);
+        Assert.Equal("steam://rungameid/1144200", result.Target);
+        Assert.True(result.UseShellExecute);
+    }
+
+    [Fact]
+    public void ReadyOrNotLauncher_FallsBackToDirectExecutable()
+    {
+        var root = CreateTempDirectory();
+        var executable = Path.Combine(root, "ReadyOrNot", "Binaries", "Win64", "ReadyOrNot-Win64-Shipping.exe");
+        Directory.CreateDirectory(Path.GetDirectoryName(executable)!);
+        File.WriteAllText(executable, string.Empty);
+
+        var result = ReadyOrNotLauncher.Resolve(root, preferSteam: false);
+
+        Assert.True(result.CanLaunch);
+        Assert.Equal(executable, result.Target);
+        Assert.Equal(Path.GetDirectoryName(executable), result.WorkingDirectory);
+        Assert.True(result.UseShellExecute);
+    }
+
+    [Fact]
+    public void ReadyOrNotLauncher_ReturnsFailureWhenNoLaunchTargetExists()
+    {
+        var result = ReadyOrNotLauncher.Resolve(CreateTempDirectory(), preferSteam: false);
+
+        Assert.False(result.CanLaunch);
+        Assert.Contains("Ready or Not executable", result.Message);
+    }
+
+    [Fact]
     public void ArchiveImportPlanner_AttachesMultipleArchivesToQueue()
     {
         var first = Path.Combine(CreateTempDirectory(), "Alpha.zip");

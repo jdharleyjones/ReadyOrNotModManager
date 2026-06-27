@@ -57,6 +57,26 @@
             <Setter Property="Background" Value="#3A3524"/>
             <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
         </Style>
+        <Style x:Key="ActionButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#23333B"/>
+            <Setter Property="BorderBrush" Value="#5E8CA6"/>
+        </Style>
+        <Style x:Key="DownloadButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#20344B"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BlueBrush}"/>
+        </Style>
+        <Style x:Key="DeployButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#233A2B"/>
+            <Setter Property="BorderBrush" Value="{StaticResource SuccessBrush}"/>
+        </Style>
+        <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#472722"/>
+            <Setter Property="BorderBrush" Value="{StaticResource DangerBrush}"/>
+        </Style>
+        <Style x:Key="SpecialButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#3A3524"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+        </Style>
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="{StaticResource PanelBrush}"/>
             <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
@@ -247,11 +267,13 @@
                                     <TextBlock Text="Paste a Nexus mod or collection URL, then queue, import, or deploy without leaving the dashboard." Foreground="{StaticResource MutedBrush}" Margin="0,2,0,12"/>
                                     <TextBox x:Name="UrlBox" ToolTip="Paste a Ready or Not mod or collection URL"/>
                                     <WrapPanel>
-                                        <Button Content="Add Nexus URL" Click="AddUrl_Click" Style="{StaticResource PrimaryButton}"/>
-                                        <Button Content="Import Archive" Click="ImportArchive_Click"/>
-                                        <Button Content="Deploy Queue" Click="DeploySelected_Click"/>
-                                        <Button Content="Open Mods Folder" Click="OpenModsFolder_Click"/>
-                                        <Button Content="Open Game Folder" Click="OpenGameFolder_Click"/>
+                                        <Button Content="Add Nexus URL" Click="AddUrl_Click" Tag="{Binding ElementName=UrlBox}" Style="{StaticResource ActionButton}"/>
+                                        <Button Content="Import Archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
+                                        <Button Content="Deploy all downloaded" Click="DeployDownloaded_Click" Style="{StaticResource DeployButton}"/>
+                                        <Button Content="Show Modpacks" Click="ModpacksNav_Click" Style="{StaticResource SpecialButton}"/>
+                                        <Button Content="Run Game" Click="RunGame_Click" Style="{StaticResource DeployButton}"/>
+                                        <Button Content="Open Mods Folder" Click="OpenModsFolder_Click" Style="{StaticResource ActionButton}"/>
+                                        <Button Content="Open Game Folder" Click="OpenGameFolder_Click" Style="{StaticResource ActionButton}"/>
                                     </WrapPanel>
                                 </StackPanel>
                             </Border>
@@ -280,14 +302,18 @@
                             </DataGrid.Columns>
                         </DataGrid>
                         <WrapPanel Grid.Row="1" Margin="0,12,0,0">
-                            <Button Content="Uninstall selected" Click="UninstallInstalledSelected_Click"/>
-                            <Button Content="Open Mods Folder" Click="OpenModsFolder_Click"/>
+                            <Button Content="Uninstall selected" Click="UninstallInstalledSelected_Click" Style="{StaticResource DangerButton}"/>
+                            <Button Content="Open Mods Folder" Click="OpenModsFolder_Click" Style="{StaticResource ActionButton}"/>
                         </WrapPanel>
                     </Grid>
 
                     <Grid x:Name="QueuePage" Visibility="Collapsed">
-                        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                        <DataGrid x:Name="QueueGrid" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" SelectionMode="Extended" AlternationCount="2">
+                        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                        <DockPanel Margin="0,0,0,10">
+                            <Button Content="Add Nexus URL" Click="AddUrl_Click" Tag="{Binding ElementName=QueueUrlBox}" DockPanel.Dock="Right" Style="{StaticResource ActionButton}"/>
+                            <TextBox x:Name="QueueUrlBox" Margin="0,4,10,4" ToolTip="Paste a Ready or Not mod or collection URL"/>
+                        </DockPanel>
+                        <DataGrid x:Name="QueueGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" SelectionMode="Extended" AlternationCount="2">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Mod" Binding="{Binding ModName}" Width="2*"/>
                                 <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="110"/>
@@ -297,14 +323,14 @@
                                 <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="180"/>
                             </DataGrid.Columns>
                         </DataGrid>
-                        <WrapPanel Grid.Row="1" Margin="0,12,0,0">
-                            <Button Content="Download missing" Click="DownloadMissing_Click" Style="{StaticResource PrimaryButton}"/>
-                            <Button Content="Open Nexus page" Click="OpenSelectedPage_Click"/>
-                            <Button Content="Import archive" Click="ImportArchive_Click"/>
-                            <Button Content="Delete download" Click="DeleteDownloadedArchive_Click"/>
-                            <Button Content="Deploy selected" Click="DeploySelected_Click"/>
-                            <Button Content="Uninstall selected" Click="UninstallSelected_Click"/>
-                            <Button Content="Clear completed" Click="ClearCompleted_Click"/>
+                        <WrapPanel Grid.Row="2" Margin="0,12,0,0">
+                            <Button Content="Download missing" Click="DownloadMissing_Click" Style="{StaticResource DownloadButton}"/>
+                            <Button Content="Open Nexus page" Click="OpenSelectedPage_Click" Style="{StaticResource ActionButton}"/>
+                            <Button Content="Import archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
+                            <Button Content="Delete download" Click="DeleteDownloadedArchive_Click" Style="{StaticResource DangerButton}"/>
+                            <Button Content="Deploy selected" Click="DeploySelected_Click" Style="{StaticResource DeployButton}"/>
+                            <Button Content="Uninstall selected" Click="UninstallSelected_Click" Style="{StaticResource DangerButton}"/>
+                            <Button Content="Clear completed" Click="ClearCompleted_Click" Style="{StaticResource DangerButton}"/>
                         </WrapPanel>
                     </Grid>
 
@@ -321,11 +347,11 @@
                         <DockPanel Grid.Row="1" Margin="0,12,0,0">
                             <TextBox x:Name="ProfileNameBox" Width="260" DockPanel.Dock="Left" ToolTip="Profile name"/>
                             <WrapPanel HorizontalAlignment="Right">
-                                <Button Content="Save current as new" Click="SaveProfileNew_Click" Style="{StaticResource PrimaryButton}"/>
-                                <Button Content="Update selected" Click="UpdateProfileSelected_Click"/>
-                                <Button Content="Load selected" Click="LoadProfileSelected_Click"/>
-                                <Button Content="Activate selected" Click="ActivateProfileSelected_Click"/>
-                                <Button Content="Delete selected" Click="DeleteProfileSelected_Click"/>
+                                <Button Content="Save current as new" Click="SaveProfileNew_Click" Style="{StaticResource SpecialButton}"/>
+                                <Button Content="Update selected" Click="UpdateProfileSelected_Click" Style="{StaticResource SpecialButton}"/>
+                                <Button Content="Load selected" Click="LoadProfileSelected_Click" Style="{StaticResource ActionButton}"/>
+                                <Button Content="Activate selected" Click="ActivateProfileSelected_Click" Style="{StaticResource DeployButton}"/>
+                                <Button Content="Delete selected" Click="DeleteProfileSelected_Click" Style="{StaticResource DangerButton}"/>
                             </WrapPanel>
                         </DockPanel>
                     </Grid>
@@ -335,10 +361,10 @@
                             <TextBlock Text="Archive locations" FontSize="20" FontWeight="SemiBold"/>
                             <TextBlock Text="Manage retained downloads and browser fallback imports." Foreground="{StaticResource MutedBrush}" Margin="0,2,0,14"/>
                             <WrapPanel>
-                                <Button Content="Open download folder" Click="OpenDownloadDirectory_Click"/>
-                                <Button Content="Import archive" Click="ImportArchive_Click"/>
-                                <Button Content="Delete selected download" Click="DeleteDownloadedArchive_Click"/>
-                                <Button Content="Download missing queue items" Click="DownloadMissing_Click" Style="{StaticResource PrimaryButton}"/>
+                                <Button Content="Open download folder" Click="OpenDownloadDirectory_Click" Style="{StaticResource ActionButton}"/>
+                                <Button Content="Import archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
+                                <Button Content="Delete selected download" Click="DeleteDownloadedArchive_Click" Style="{StaticResource DangerButton}"/>
+                                <Button Content="Download missing queue items" Click="DownloadMissing_Click" Style="{StaticResource DownloadButton}"/>
                             </WrapPanel>
                         </StackPanel>
                     </ScrollViewer>
@@ -347,29 +373,29 @@
                         <StackPanel MaxWidth="760" HorizontalAlignment="Left">
                             <TextBlock Text="Nexus API key" FontWeight="SemiBold"/>
                             <PasswordBox x:Name="ApiKeyBox"/>
-                            <WrapPanel><Button Content="Save settings" Click="SaveSettings_Click" Style="{StaticResource PrimaryButton}"/><Button Content="Get API key" Click="OpenApiKeyPage_Click"/><Button Content="Test Connection" Click="TestConnection_Click"/></WrapPanel>
+                            <WrapPanel><Button Content="Save settings" Click="SaveSettings_Click" Style="{StaticResource SpecialButton}"/><Button Content="Get API key" Click="OpenApiKeyPage_Click" Style="{StaticResource ActionButton}"/><Button Content="Test Connection" Click="TestConnection_Click" Style="{StaticResource DownloadButton}"/></WrapPanel>
                             <CheckBox x:Name="AdvancedOptionsBox" Content="Advanced options" Foreground="{StaticResource TextBrush}" Margin="0,8,0,18"/>
 
                             <TextBlock Text="Ready or Not install folder" FontWeight="SemiBold"/>
                             <TextBox x:Name="GameDirectoryBox"/>
-                            <WrapPanel><Button Content="Choose game folder" Click="BrowseGameDirectory_Click"/><Button Content="Auto-detect Game Folder" Click="AutoDetectGameFolder_Click"/><Button Content="Open game folder" Click="OpenGameFolder_Click"/></WrapPanel>
+                            <WrapPanel><Button Content="Choose game folder" Click="BrowseGameDirectory_Click" Style="{StaticResource ActionButton}"/><Button Content="Auto-detect Game Folder" Click="AutoDetectGameFolder_Click" Style="{StaticResource DownloadButton}"/><Button Content="Open game folder" Click="OpenGameFolder_Click" Style="{StaticResource ActionButton}"/></WrapPanel>
 
                             <TextBlock Text="Download folder" FontWeight="SemiBold" Margin="0,14,0,0"/>
                             <TextBox x:Name="DownloadDirectoryBox"/>
-                            <WrapPanel><Button Content="Choose download folder" Click="BrowseDownloadDirectory_Click"/><Button Content="Open folder" Click="OpenDownloadDirectory_Click"/></WrapPanel>
+                            <WrapPanel><Button Content="Choose download folder" Click="BrowseDownloadDirectory_Click" Style="{StaticResource ActionButton}"/><Button Content="Open folder" Click="OpenDownloadDirectory_Click" Style="{StaticResource ActionButton}"/></WrapPanel>
 
                             <TextBlock Text="Browser fallback import folder" FontWeight="SemiBold" Margin="0,14,0,0"/>
                             <TextBox x:Name="ImportDirectoryBox"/>
-                            <Button Content="Choose import folder" Click="BrowseImportDirectory_Click"/>
+                            <Button Content="Choose import folder" Click="BrowseImportDirectory_Click" Style="{StaticResource ActionButton}"/>
 
                             <TextBlock Text="Modpack library folder" FontWeight="SemiBold" Margin="0,14,0,0"/>
                             <TextBox x:Name="ProfileLibraryDirectoryBox"/>
-                            <WrapPanel><Button Content="Choose library folder" Click="BrowseProfileLibraryDirectory_Click"/><Button Content="Open library" Click="OpenProfileLibraryDirectory_Click"/></WrapPanel>
+                            <WrapPanel><Button Content="Choose library folder" Click="BrowseProfileLibraryDirectory_Click" Style="{StaticResource ActionButton}"/><Button Content="Open library" Click="OpenProfileLibraryDirectory_Click" Style="{StaticResource ActionButton}"/></WrapPanel>
 
                             <Separator Margin="0,20,0,16" Background="{StaticResource LineBrush}"/>
                             <WrapPanel>
-                                <Button Content="Reset setup wizard" Click="ResetSetupWizard_Click"/>
-                                <Button Content="Clear user data" Click="ClearUserData_Click"/>
+                                <Button Content="Reset setup wizard" Click="ResetSetupWizard_Click" Style="{StaticResource SpecialButton}"/>
+                                <Button Content="Clear user data" Click="ClearUserData_Click" Style="{StaticResource DangerButton}"/>
                             </WrapPanel>
                         </StackPanel>
                     </ScrollViewer>
@@ -386,11 +412,11 @@
                             </DataGrid.Columns>
                         </DataGrid>
                         <WrapPanel Grid.Row="1" Margin="0,12,0,0">
-                            <Button Content="Open Nexus page" Click="OpenErrorNexus_Click"/>
-                            <Button Content="Open game folder" Click="OpenErrorGameFolder_Click"/>
-                            <Button Content="Open archive folder" Click="OpenErrorArchiveFolder_Click"/>
-                            <Button Content="Copy manual fix note" Click="CopyErrorManualFix_Click"/>
-                            <Button Content="Clear errors" Click="ClearErrors_Click"/>
+                            <Button Content="Open Nexus page" Click="OpenErrorNexus_Click" Style="{StaticResource ActionButton}"/>
+                            <Button Content="Open game folder" Click="OpenErrorGameFolder_Click" Style="{StaticResource ActionButton}"/>
+                            <Button Content="Open archive folder" Click="OpenErrorArchiveFolder_Click" Style="{StaticResource ActionButton}"/>
+                            <Button Content="Copy manual fix note" Click="CopyErrorManualFix_Click" Style="{StaticResource SpecialButton}"/>
+                            <Button Content="Clear errors" Click="ClearErrors_Click" Style="{StaticResource DangerButton}"/>
                         </WrapPanel>
                     </Grid>
                 </Grid>

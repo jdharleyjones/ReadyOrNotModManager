@@ -131,7 +131,7 @@ public partial class MainWindow : Window
         SetRailStatusIcon(RailNexusStatusIcon, GetNexusRailStatus(nexusStatus));
         DashboardNexusStatusText.Text = nexusStatus;
 
-        var summary = DashboardSummaryFactory.Create(CreateManifestStore().Load(), _queue, CreateErrorLogStore().Load());
+        var summary = DashboardSummaryFactory.Create(CreateManifestStore().Load(), _queue, CreateErrorLogStore().Load(), CreateActivityLogStore().Load());
         InstalledModCountText.Text = summary.InstalledModCount.ToString();
         PendingQueueCountText.Text = summary.PendingQueueCount.ToString();
         RecentActivityList.ItemsSource = summary.RecentActivity.Count == 0
@@ -369,10 +369,14 @@ public partial class MainWindow : Window
 
     private async void AddUrl_Click(object sender, RoutedEventArgs e)
     {
+        var input = sender is FrameworkElement { Tag: System.Windows.Controls.TextBox taggedBox }
+            ? taggedBox
+            : UrlBox;
+
         await RunUiTaskAsync(async () =>
         {
             SaveSettings();
-            var reference = NexusUrlParser.Parse(UrlBox.Text);
+            var reference = NexusUrlParser.Parse(input.Text);
             using var http = new HttpClient();
 
             switch (reference)
@@ -385,7 +389,7 @@ public partial class MainWindow : Window
                     break;
             }
 
-            UrlBox.Clear();
+            input.Clear();
             RefreshDashboard();
         });
     }
@@ -566,61 +570,82 @@ public partial class MainWindow : Window
         await RunUiTaskAsync(async () =>
         {
             SaveSettings();
-            if (!ReadyOrNotPaths.LooksLikeInstallDirectory(_settings.ReadyOrNotDirectory))
-            {
-                throw new DirectoryNotFoundException("Choose the Ready or Not install folder that contains ReadyOrNot\\Content\\Paks.");
-            }
-
-            var manager = CreateDeploymentManager();
-            var items = GetSelectedItems().ToArray();
-            var total = Math.Max(items.Length, 1);
-            for (var index = 0; index < items.Length; index++)
-            {
-                var item = items[index];
-                var itemNumber = index + 1;
-                SetProgress(index / (double)total, $"Deploying {itemNumber} of {items.Length}");
-                if (!File.Exists(item.ArchivePath))
-                {
-                    item.Status = "Missing zip";
-                    LogItemError("Deploy", item, new FileNotFoundException("The downloaded archive could not be found.", item.ArchivePath));
-                    continue;
-                }
-
-                try
-                {
-                    var selectedEntries = ResolveSelectedArchiveEntries(item);
-                    var deployProgress = new Progress<double>(value =>
-                        SetProgress((index + Math.Clamp(value, 0, 1)) / total, $"Deploying {itemNumber} of {items.Length}"));
-                    var request = new DeploymentRequest(
-                        ModName: item.ModName,
-                        SourceUrl: item.SourceUrl,
-                        ArchivePath: item.ArchivePath,
-                        ReadyOrNotInstallDirectory: _settings.ReadyOrNotDirectory,
-                        ProfileId: item.ProfileId,
-                        ModId: item.ModId,
-                        FileId: item.FileId,
-                        ExistingInstallId: item.InstallId,
-                        SelectedArchiveEntries: selectedEntries.Count == 0 ? null : selectedEntries,
-                        Progress: deployProgress);
-                    var record = await Task.Run(() => manager.Deploy(request));
-                    item.InstallId = record.InstallId;
-                    item.SelectedArchiveEntries = record.SelectedArchiveEntries.ToList();
-                    item.Status = "Deployed";
-                }
-                catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException or IOException or UnauthorizedAccessException)
-                {
-                    item.Status = "Failed - see errors";
-                    LogItemError("Deploy", item, ex);
-                    SetStatus(ex.Message);
-                }
-
-                await Task.Yield();
-            }
-
-            SetProgress(1, "Deployment complete");
-            RefreshShellData();
-            SetStatus("Deployment complete.");
+            await DeployQueueItemsAsync(GetSelectedItems().ToArray(), "Deployment complete.");
         });
+    }
+
+    private async void DeployDownloaded_Click(object sender, RoutedEventArgs e)
+    {
+        await RunUiTaskAsync(async () =>
+        {
+            SaveSettings();
+            var deployable = QueueDeploymentPlanner.GetDeployableDownloadedItems(_queue);
+            if (deployable.Count == 0)
+            {
+                SetStatus("No downloaded queue items are ready to deploy.");
+                return;
+            }
+
+            await DeployQueueItemsAsync(deployable, $"Deployed {deployable.Count} downloaded queue item(s).");
+        });
+    }
+
+    private async Task DeployQueueItemsAsync(IReadOnlyList<ModQueueItem> items, string completionMessage)
+    {
+        if (!ReadyOrNotPaths.LooksLikeInstallDirectory(_settings.ReadyOrNotDirectory))
+        {
+            throw new DirectoryNotFoundException("Choose the Ready or Not install folder that contains ReadyOrNot\\Content\\Paks.");
+        }
+
+        var manager = CreateDeploymentManager();
+        var total = Math.Max(items.Count, 1);
+        for (var index = 0; index < items.Count; index++)
+        {
+            var item = items[index];
+            var itemNumber = index + 1;
+            SetProgress(index / (double)total, $"Deploying {itemNumber} of {items.Count}");
+            if (!File.Exists(item.ArchivePath))
+            {
+                item.Status = "Missing zip";
+                LogItemError("Deploy", item, new FileNotFoundException("The downloaded archive could not be found.", item.ArchivePath));
+                continue;
+            }
+
+            try
+            {
+                var selectedEntries = ResolveSelectedArchiveEntries(item);
+                var itemIndex = index;
+                var deployProgress = new Progress<double>(value =>
+                    SetProgress((itemIndex + Math.Clamp(value, 0, 1)) / total, $"Deploying {itemNumber} of {items.Count}"));
+                var request = new DeploymentRequest(
+                    ModName: item.ModName,
+                    SourceUrl: item.SourceUrl,
+                    ArchivePath: item.ArchivePath,
+                    ReadyOrNotInstallDirectory: _settings.ReadyOrNotDirectory,
+                    ProfileId: item.ProfileId,
+                    ModId: item.ModId,
+                    FileId: item.FileId,
+                    ExistingInstallId: item.InstallId,
+                    SelectedArchiveEntries: selectedEntries.Count == 0 ? null : selectedEntries,
+                    Progress: deployProgress);
+                var record = await Task.Run(() => manager.Deploy(request));
+                item.InstallId = record.InstallId;
+                item.SelectedArchiveEntries = record.SelectedArchiveEntries.ToList();
+                item.Status = "Deployed";
+            }
+            catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException or IOException or UnauthorizedAccessException)
+            {
+                item.Status = "Failed - see errors";
+                LogItemError("Deploy", item, ex);
+                SetStatus(ex.Message);
+            }
+
+            await Task.Yield();
+        }
+
+        SetProgress(1, "Deployment complete");
+        RefreshShellData();
+        SetStatus(completionMessage);
     }
 
     private void UninstallSelected_Click(object sender, RoutedEventArgs e)
@@ -706,6 +731,29 @@ public partial class MainWindow : Window
         }
 
         SetStatus("Ready or Not install folder was not found.");
+    }
+
+    private void RunGame_Click(object sender, RoutedEventArgs e)
+    {
+        SaveSettings();
+        var target = ReadyOrNotLauncher.Resolve(_settings.ReadyOrNotDirectory, preferSteam: true);
+        try
+        {
+            LaunchTarget(target);
+            SetStatus(target.Message);
+        }
+        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException or FileNotFoundException)
+        {
+            var fallback = ReadyOrNotLauncher.Resolve(_settings.ReadyOrNotDirectory, preferSteam: false);
+            if (!fallback.CanLaunch)
+            {
+                SetStatus(fallback.Message);
+                return;
+            }
+
+            LaunchTarget(fallback);
+            SetStatus(fallback.Message);
+        }
     }
 
     private void UninstallInstalledSelected_Click(object sender, RoutedEventArgs e)
@@ -899,6 +947,7 @@ public partial class MainWindow : Window
             File.Delete(manifestPath);
         }
         CreateErrorLogStore().Clear();
+        CreateActivityLogStore().Clear();
 
         _queue.Clear();
         _settings = new LocalSettings();
@@ -913,7 +962,7 @@ public partial class MainWindow : Window
         LoadSettings();
         ShellRoot.Visibility = Visibility.Collapsed;
         SetupRoot.Visibility = Visibility.Visible;
-        SetStatus("User data cleared.");
+        SetStatus("User data cleared.", logActivity: false);
     }
 
     private void SaveSettings(bool? setupCompleted = null, bool? forceSetupWizard = null)
@@ -1202,6 +1251,11 @@ public partial class MainWindow : Window
         return new ErrorLogStore(Path.Combine(_appDataDirectory, "error-log.json"));
     }
 
+    private ActivityLogStore CreateActivityLogStore()
+    {
+        return new ActivityLogStore(Path.Combine(_appDataDirectory, "activity-log.json"));
+    }
+
     private ModProfileStore CreateProfileStore()
     {
         return new ModProfileStore(_settings.ProfileLibraryDirectory);
@@ -1242,12 +1296,31 @@ public partial class MainWindow : Window
         Process.Start(new ProcessStartInfo(path.Trim()) { UseShellExecute = true });
     }
 
+    private static void LaunchTarget(ReadyOrNotLaunchTarget target)
+    {
+        if (!target.CanLaunch)
+        {
+            throw new InvalidOperationException(target.Message);
+        }
+
+        var info = new ProcessStartInfo(target.Target)
+        {
+            UseShellExecute = target.UseShellExecute
+        };
+        if (!string.IsNullOrWhiteSpace(target.WorkingDirectory))
+        {
+            info.WorkingDirectory = target.WorkingDirectory;
+        }
+
+        Process.Start(info);
+    }
+
     private async Task RunUiTaskAsync(Func<Task> action)
     {
         try
         {
             IsEnabled = false;
-            SetStatus("Working...");
+            SetStatus("Working...", logActivity: false);
             SetProgress(0, string.Empty);
             await action();
         }
@@ -1262,9 +1335,17 @@ public partial class MainWindow : Window
         }
     }
 
-    private void SetStatus(string message)
+    private void SetStatus(string message, bool logActivity = true)
     {
         StatusText.Text = message;
+        if (logActivity && !string.IsNullOrWhiteSpace(message))
+        {
+            CreateActivityLogStore().Append(message);
+            if (ShellRoot.Visibility == Visibility.Visible)
+            {
+                RefreshDashboard();
+            }
+        }
     }
 
     private void SetProgress(double value, string message)
@@ -1287,5 +1368,6 @@ public partial class MainWindow : Window
             Message = exception.Message,
             Detail = exception.ToString()
         });
+        SetStatus($"{operation} failed for {item.ModName}: {exception.Message}");
     }
 }

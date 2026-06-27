@@ -14,12 +14,19 @@ public static class DashboardSummaryFactory
 {
     public static DashboardSummary Create(InstallManifest manifest, IEnumerable<ModQueueItem> queue, ErrorLog log)
     {
+        return Create(manifest, queue, log, new ActivityLog());
+    }
+
+    public static DashboardSummary Create(InstallManifest manifest, IEnumerable<ModQueueItem> queue, ErrorLog log, ActivityLog activityLog)
+    {
         var pending = queue.Count(item =>
             item.Status is "Queued" or "Downloaded" or "Imported archive" or "Loaded from profile" or "Missing archive" or "Open Nexus page and import zip");
 
-        var activity = log.Entries
+        var activity = activityLog.Entries
+            .Select(entry => new RecentActivityItem(entry.TimestampUtc, entry.Message))
+            .Concat(log.Entries
             .Select(entry => new RecentActivityItem(entry.TimestampUtc, $"{entry.Operation} failed for {entry.ModName}"))
-            .Concat(manifest.Records.Select(record => new RecentActivityItem(record.InstalledAtUtc, $"{record.ModName} deployed")))
+            .Concat(manifest.Records.Select(record => new RecentActivityItem(record.InstalledAtUtc, $"{record.ModName} deployed"))))
             .OrderByDescending(item => item.TimestampUtc)
             .Take(8)
             .ToArray();
