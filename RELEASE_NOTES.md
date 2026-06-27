@@ -1,5 +1,13 @@
 # Release Notes
 
+## 1.2.6
+
+- Make Settings colour schemes visibly repaint the app instead of only saving the selected option.
+- Add gradient shell, sidebar, panel, input, and table surface brushes for each theme.
+- Add Dark mode and Light mode.
+- Replace the ChatGPT theme option with a Codex palette.
+- Keep Claude and Hacker palettes available.
+
 ## 1.2.5
 
 - Fix a 1.2.4 startup crash where WPF theme brush resources could be frozen/read-only in the published executable.

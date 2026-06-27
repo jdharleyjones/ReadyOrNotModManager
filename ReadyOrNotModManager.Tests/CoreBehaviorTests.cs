@@ -688,8 +688,11 @@ public sealed class CoreBehaviorTests
     public void ThemeManager_ProvidesNamedThemesAndFallsBackToDefault()
     {
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "claude");
-        Assert.Contains(ThemeManager.Themes, theme => theme.Name == "chatgpt");
+        Assert.Contains(ThemeManager.Themes, theme => theme.Name == "codex");
+        Assert.Contains(ThemeManager.Themes, theme => theme.Name == "dark");
+        Assert.Contains(ThemeManager.Themes, theme => theme.Name == "light");
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "hacker");
+        Assert.DoesNotContain(ThemeManager.Themes, theme => theme.Name == "chatgpt");
 
         Assert.Equal(ThemeManager.DefaultThemeName, ThemeManager.ResolveThemeName("missing"));
     }
@@ -704,9 +707,23 @@ public sealed class CoreBehaviorTests
 
         ThemeManager.ApplyTheme(resources, "claude");
 
-        var updatedBrush = Assert.IsType<SolidColorBrush>(resources["ShellBrush"]);
+        var updatedBrush = Assert.IsType<LinearGradientBrush>(resources["ShellBrush"]);
         Assert.False(updatedBrush.IsFrozen);
-        Assert.NotEqual(frozenBrush, updatedBrush);
+        Assert.NotSame(frozenBrush, updatedBrush);
+    }
+
+    [Fact]
+    public void ThemeManager_AppliesVisibleGradientSurfaceBrushes()
+    {
+        var resources = new ResourceDictionary();
+
+        ThemeManager.ApplyTheme(resources, "codex");
+
+        Assert.IsType<LinearGradientBrush>(resources["ShellBrush"]);
+        Assert.IsType<LinearGradientBrush>(resources["RailBrush"]);
+        Assert.IsType<LinearGradientBrush>(resources["PanelBrush"]);
+        Assert.IsType<LinearGradientBrush>(resources["PanelAltBrush"]);
+        Assert.IsType<SolidColorBrush>(resources["TextBrush"]);
     }
 
     [Fact]
