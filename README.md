@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.3.0`
+Version: `1.3.1`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -33,16 +33,16 @@ The executable will be written to `publish\win-x64`.
    - Use **Test Connection** to validate the key.
    - Use **Auto-detect Game Folder** or choose the Ready or Not install folder manually.
 2. Use the dashboard quick actions to add Nexus URLs, import archives, deploy all downloaded queue items, open mod folders, show modpacks, or run the game.
-3. Use the navigation sidebar for Dashboard, Mods, Queue, Modpacks, Downloads, Settings, and Logs/Errors.
+3. Use the navigation sidebar for Dashboard, Installed, Mods, Modpacks, Downloads, Settings, and Logs/Errors.
 4. Edit API/folder settings later from **Settings**. Use **Reset setup wizard** there to rerun the guided setup flow.
 
 The app stores settings, logs, manifests, and queue data under `%LOCALAPPDATA%\ReadyOrNotModManager`; the API key is protected with Windows user-scope DPAPI. These files are local to each Windows user and are not included in the GitHub repository or portable release zip. Deployed files are tracked in a local install manifest so selected mods can be uninstalled later.
 
 The main dashboard shows game detection, Nexus connection, installed mod count, pending queue count, recent activity, and common quick actions. Recent activity is shown as structured event rows with timestamps, icons, and status colour.
 
-The Queue page has a Nexus URL toolbar, search, status filter, queue summary, status badges, and grouped action buttons. Button colours follow the action type: blue for normal/info, green for success/deploy/run game, amber for warning/modpacks, red for destructive/error, and grey for inactive.
+The Mods page has a Nexus URL toolbar, search, status filter, queue summary, status badges, and grouped action buttons. Button colours follow the action type: blue for normal/info, green for success/deploy/run game, amber for warning/modpacks, red for destructive/error, and grey for inactive.
 
-Use **Remove selected** on the Queue page to remove accidental or duplicate queue entries without deleting downloaded archives or uninstalling deployed files.
+Use **Remove selected** on the Mods page to remove accidental or duplicate queue entries without deleting downloaded archives or uninstalling deployed files.
 
 The downloader supports ZIP, RAR, 7z, and `.7zip` archive aliases. If Nexus serves a RAR or 7z file when the queue expected a zip, the app detects the real archive type and corrects the saved extension.
 
@@ -50,11 +50,11 @@ Use **Import archive** to attach a manually downloaded ZIP/RAR/7z file to the se
 
 Use **Advanced options** when you want to choose which `.pak` groups deploy from an archive that contains multiple mod variants. The app groups matching `.pak`, `.ucas`, `.utoc`, and `.sig` files together so the selected variant deploys with its required companion files.
 
-Use **Modpacks** to save the current queue as a local profile, load a profile back into the queue, rename a modpack from the right-click menu, or activate a profile. Activating a profile uninstalls files tracked for the previously active profile, then deploys the chosen profile's available archives. Profile data and copied archives are stored in the configured modpack library folder.
+Use **Modpacks** to save the currently installed/deployed mods as a local profile, load a profile back into the queue, rename a modpack from the right-click menu, or activate a profile. Activating a profile uninstalls files tracked for the previously active profile, then deploys the chosen profile's available archives. Profile data and copied archives are stored in the configured modpack library folder.
 
 Long download and deploy operations report overall progress in the bottom status bar. Failed items are skipped so the rest of the queue can continue.
 
-Version 1.3.0 redesigns the WPF shell as a modern tactical operations dashboard with layered dark gradients, subtle glows, glassy cards, stronger sidebar active states, structured activity rows, settings section cards, queue status badges, search/filter controls, and a compact status dock. Version 1.2.7 hides the progress bar until work is running, adds an optional automatic Nexus API test on launch, and adds a purple gradient theme.
+Version 1.3.1 polishes the dashboard cards, darkens themed dropdowns, adds direct Nexus Mods and Collections dashboard links, and changes modpack saves/updates to snapshot only installed manifest records. Version 1.3.0 redesigns the WPF shell as a modern tactical operations dashboard with layered dark gradients, subtle glows, glassy cards, stronger sidebar active states, structured activity rows, settings section cards, queue status badges, search/filter controls, and a compact status dock.
 
 Use the **Colour scheme** selector in Settings to switch between Tactical default, Dark mode, Light mode, Claude palette, Codex palette, Purple gradient, and Hacker themes. The selected theme is saved locally and applied on future launches.
 
@@ -65,3 +65,5 @@ Use **Clear user data** to remove the locally saved API key, selected folders, l
 ## Notes
 
 This app does not scrape Nexus pages, bypass Nexus download restrictions, redistribute mods, or bundle mod archives. It uses Nexus API calls where available and falls back to the user's browser for downloads that require normal Nexus website handling.
+
+Unsigned portable builds can trigger Windows Defender SmartScreen because Windows has not established publisher or file reputation for the executable. That warning cannot be suppressed from inside the app. For public distribution, Microsoft recommends Microsoft Store distribution or Artifact Signing/Trusted Signing for non-Store builds; SmartScreen reputation still builds over time from the signed publisher and release behavior, and EV certificates no longer automatically bypass SmartScreen reputation checks.

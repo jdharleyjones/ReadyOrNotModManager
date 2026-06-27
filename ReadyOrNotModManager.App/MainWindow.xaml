@@ -88,6 +88,30 @@
             <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
             <Setter Property="CaretBrush" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="MinHeight" Value="38"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7">
+                            <Grid Margin="{TemplateBinding Padding}">
+                                <ScrollViewer x:Name="PART_ContentHost"/>
+                                <TextBlock x:Name="Watermark" Text="{TemplateBinding Tag}" Foreground="{DynamicResource MutedBrush}" Opacity="0.72" IsHitTestVisible="False" Visibility="Collapsed" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="Watermark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource BlueBrush}"/>
+                                <Setter TargetName="Watermark" Property="Opacity" Value="0.38"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.52"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style TargetType="PasswordBox">
             <Setter Property="Margin" Value="0,6,0,10"/>
@@ -231,9 +255,74 @@
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
         </Style>
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Background" Value="#D0141C22"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="ItemChrome" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="ItemChrome" Property="Background" Value="#66344650"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="ItemChrome" Property="Background" Value="#88415A66"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style TargetType="ComboBox">
             <Setter Property="MinHeight" Value="38"/>
             <Setter Property="Margin" Value="0,6,10,10"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Background" Value="#AA0F161C"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LineBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="ToggleButton" Focusable="False" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press" Background="Transparent" BorderThickness="0">
+                                <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ContentPresenter Content="{TemplateBinding SelectionBoxItem}" ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}" ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                                        <Path Grid.Column="1" Data="M 0 0 L 4 4 L 8 0 Z" Fill="{DynamicResource MutedBrush}" Width="8" Height="5" Stretch="Fill" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </ToggleButton>
+                            <Popup x:Name="PART_Popup" AllowsTransparency="True" Focusable="False" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" PopupAnimation="Fade">
+                                <Border Background="{DynamicResource PanelBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" CornerRadius="7" MinWidth="{TemplateBinding ActualWidth}" Padding="2">
+                                    <ScrollViewer MaxHeight="260" CanContentScroll="True">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource BlueBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{DynamicResource BlueBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Chrome" Property="Opacity" Value="0.52"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
         <Style TargetType="CheckBox">
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
@@ -324,10 +413,10 @@
                             <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="ViewDashboardOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Dashboard"/></StackPanel>
                         </Button>
                         <Button x:Name="ModsNavButton" Style="{StaticResource NavButton}" Click="ModsNav_Click">
-                            <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="PackageVariantClosed" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Mods"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="PackageVariantClosed" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Installed"/></StackPanel>
                         </Button>
                         <Button x:Name="QueueNavButton" Style="{StaticResource NavButton}" Click="QueueNav_Click">
-                            <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="PlaylistCheck" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Queue"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="PlaylistCheck" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Mods"/></StackPanel>
                         </Button>
                         <Button x:Name="ModpacksNavButton" Style="{StaticResource NavButton}" Click="ModpacksNav_Click">
                             <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="FolderMultipleOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Modpacks"/></StackPanel>
@@ -388,10 +477,10 @@
                                 <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,12,0">
                                     <Grid>
                                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                        <DockPanel>
-                                            <TextBlock Text="GAME STATUS" Style="{StaticResource SectionEyebrow}"/>
-                                            <iconPacks:PackIconMaterial x:Name="DashboardGameIcon" DockPanel.Dock="Right" Kind="GamepadVariantOutline" Width="20" Height="20" Foreground="{DynamicResource SuccessBrush}"/>
-                                        </DockPanel>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial x:Name="DashboardGameIcon" Kind="GamepadVariantOutline" Width="18" Height="18" Foreground="{DynamicResource SuccessBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="GAME STATUS" Style="{StaticResource SectionEyebrow}" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <TextBlock x:Name="DashboardGameStatusText" Grid.Row="1" Text="Not detected" FontSize="26" FontWeight="SemiBold" Margin="0,10,0,2"/>
                                         <TextBlock x:Name="DashboardGameHelperText" Grid.Row="2" Text="Choose or auto-detect the game folder" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
                                     </Grid>
@@ -399,30 +488,33 @@
                                 <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,12,0">
                                     <Grid>
                                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                        <DockPanel>
-                                            <TextBlock Text="NEXUS" Style="{StaticResource SectionEyebrow}"/>
-                                            <iconPacks:PackIconMaterial x:Name="DashboardNexusIcon" DockPanel.Dock="Right" Kind="AccountQuestionOutline" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}"/>
-                                        </DockPanel>
-                                        <TextBlock x:Name="DashboardNexusStatusText" Grid.Row="1" Text="Not tested" FontSize="24" FontWeight="SemiBold" Margin="0,10,0,2" TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial x:Name="DashboardNexusIcon" Kind="AccountQuestionOutline" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="NEXUS" Style="{StaticResource SectionEyebrow}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Row="1" Margin="0,10,0,2">
+                                            <TextBlock x:Name="DashboardNexusPrefixText" Text="Correct:" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Visibility="Collapsed"/>
+                                            <TextBlock x:Name="DashboardNexusStatusText" Text="Not tested" FontSize="24" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
                                         <TextBlock x:Name="DashboardNexusHelperText" Grid.Row="2" Text="Run a connection test from Settings" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
                                     </Grid>
                                 </Border>
                                 <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,12,0">
                                     <StackPanel>
-                                        <DockPanel>
-                                            <TextBlock Text="INSTALLED" Style="{StaticResource SectionEyebrow}"/>
-                                            <iconPacks:PackIconMaterial DockPanel.Dock="Right" Kind="PackageVariantClosed" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}"/>
-                                        </DockPanel>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial Kind="PackageVariantClosed" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="INSTALLED" Style="{StaticResource SectionEyebrow}" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <TextBlock x:Name="InstalledModCountText" Text="0" FontSize="34" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" Margin="0,8,0,0"/>
                                         <TextBlock Text="Tracked deployed mods" Foreground="{DynamicResource MutedBrush}"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource CardBorderStyle}">
                                     <StackPanel>
-                                        <DockPanel>
-                                            <TextBlock Text="PENDING" Style="{StaticResource SectionEyebrow}"/>
-                                            <iconPacks:PackIconMaterial DockPanel.Dock="Right" Kind="PlaylistCheck" Width="20" Height="20" Foreground="{DynamicResource BlueBrush}"/>
-                                        </DockPanel>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial Kind="PlaylistCheck" Width="18" Height="18" Foreground="{DynamicResource BlueBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="PENDING" Style="{StaticResource SectionEyebrow}" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <TextBlock x:Name="PendingQueueCountText" Text="0" FontSize="34" FontWeight="SemiBold" Foreground="{DynamicResource BlueBrush}" Margin="0,8,0,0"/>
                                         <TextBlock Text="Queue items awaiting action" Foreground="{DynamicResource MutedBrush}"/>
                                     </StackPanel>
@@ -430,10 +522,10 @@
                                 <Border Style="{StaticResource CardBorderStyle}" Margin="12,0,0,0">
                                     <Grid>
                                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                        <DockPanel>
-                                            <TextBlock Text="APP VERSION" Style="{StaticResource SectionEyebrow}"/>
-                                            <iconPacks:PackIconMaterial x:Name="DashboardUpdateIcon" DockPanel.Dock="Right" Kind="Update" Width="20" Height="20" Foreground="{DynamicResource AccentBrush}"/>
-                                        </DockPanel>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial x:Name="DashboardUpdateIcon" Kind="Update" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="APP VERSION" Style="{StaticResource SectionEyebrow}" VerticalAlignment="Center"/>
+                                        </StackPanel>
                                         <TextBlock x:Name="DashboardUpdateStatusText" Grid.Row="1" Text="Current: checking" TextWrapping="Wrap" FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" Margin="0,10,0,2"/>
                                         <TextBlock x:Name="DashboardUpdateHelperText" Grid.Row="2" Text="Checking latest GitHub release" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
                                     </Grid>
@@ -444,7 +536,7 @@
                                 <StackPanel>
                                     <TextBlock Text="Quick actions" FontSize="20" FontWeight="SemiBold"/>
                                     <TextBlock Text="Paste a Nexus mod or collection URL, then queue, import, or deploy without leaving the dashboard." Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,12"/>
-                                    <TextBox x:Name="UrlBox" ToolTip="Paste a Ready or Not mod or collection URL"/>
+                                    <TextBox x:Name="UrlBox" Tag="input Nexus URL here..." ToolTip="Paste a Ready or Not mod or collection URL"/>
                                     <DockPanel LastChildFill="True">
                                         <Button Content="Run Game" Click="RunGame_Click" DockPanel.Dock="Right" HorizontalAlignment="Right" Style="{StaticResource DeployButton}"/>
                                         <WrapPanel>
@@ -452,6 +544,8 @@
                                             <Button Content="Import Archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
                                             <Button Content="Deploy all downloaded" Click="DeployDownloaded_Click" Style="{StaticResource DeployButton}"/>
                                             <Button Content="Show Modpacks" Click="ModpacksNav_Click" Style="{StaticResource SpecialButton}"/>
+                                            <Button Content="Nexus Mods" Click="OpenReadyOrNotModsPage_Click" Style="{StaticResource ActionButton}"/>
+                                            <Button Content="Nexus Collections" Click="OpenReadyOrNotCollectionsPage_Click" Style="{StaticResource SpecialButton}"/>
                                             <Button Content="Open Mods Folder" Click="OpenModsFolder_Click" Style="{StaticResource ActionButton}"/>
                                             <Button Content="Open Game Folder" Click="OpenGameFolder_Click" Style="{StaticResource ActionButton}"/>
                                         </WrapPanel>
@@ -514,7 +608,7 @@
                                     <ColumnDefinition Width="180"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBox x:Name="QueueUrlBox" Margin="0,0,10,0" ToolTip="Paste a Ready or Not mod or collection URL"/>
+                                <TextBox x:Name="QueueUrlBox" Tag="input Nexus URL here..." Margin="0,0,10,0" ToolTip="Paste a Ready or Not mod or collection URL"/>
                                 <Button Grid.Column="1" Content="Add" Click="AddUrl_Click" Tag="{Binding ElementName=QueueUrlBox}" Style="{StaticResource PrimaryButton}" Margin="0,0,18,0"/>
                                 <TextBox x:Name="QueueSearchBox" Grid.Column="2" Margin="0,0,10,0" ToolTip="Search queued mods" TextChanged="QueueFilter_Changed"/>
                                 <ComboBox x:Name="QueueStatusFilterBox" Grid.Column="3" Margin="0,0,10,0" SelectionChanged="QueueFilter_Changed"/>

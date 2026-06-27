@@ -1,5 +1,14 @@
 # Release Notes
 
+## 1.3.1
+
+- Align dashboard card icons to the left of their labels and show connected Nexus accounts as a small `Correct:` label above the username.
+- Restyle WPF dropdowns so closed and opened ComboBox controls match the dark tactical theme.
+- Add URL input placeholder text and dashboard quick links for Ready or Not Nexus mods and collections.
+- Rename sidebar Queue to Mods and Mods to Installed.
+- Save and update modpacks from installed/deployed manifest records instead of stale queue rows.
+- Document why unsigned portable builds may show Windows Defender SmartScreen warnings and how release signing addresses it.
+
 ## 1.3.0
 
 - Redesign the WPF shell as a modern dark tactical operations dashboard.

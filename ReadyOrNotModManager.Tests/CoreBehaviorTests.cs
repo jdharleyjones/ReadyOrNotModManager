@@ -495,6 +495,40 @@ public sealed class CoreBehaviorTests
     }
 
     [Fact]
+    public void ModProfilePlanner_UsesOnlyInstalledManifestRecords()
+    {
+        var installed = new InstalledModRecord
+        {
+            InstallId = "install-a",
+            ModId = 10,
+            FileId = 20,
+            ModName = "Installed Mod",
+            SourceUrl = "https://example/installed",
+            ArchivePath = "installed.zip",
+            SelectedArchiveEntries = ["Installed.pak"],
+            DeployedFiles = ["Installed.pak"]
+        };
+        var uninstalledStaleRecord = new InstalledModRecord
+        {
+            InstallId = "install-b",
+            ModId = 11,
+            FileId = 21,
+            ModName = "Removed Mod",
+            SourceUrl = "https://example/removed",
+            ArchivePath = "removed.zip"
+        };
+
+        var profile = ModProfilePlanner.FromInstalledRecords(
+            new ModProfile { Name = "Current deployed set" },
+            [installed, uninstalledStaleRecord]);
+
+        var item = Assert.Single(profile.Items);
+        Assert.Equal("Installed Mod", item.ModName);
+        Assert.Equal("install-a", item.LastInstallId);
+        Assert.Equal(["Installed.pak"], item.SelectedArchiveEntries);
+    }
+
+    [Fact]
     public void ErrorLogStore_AppendsAndClearsEntries()
     {
         var path = Path.Combine(CreateTempDirectory(), "error-log.json");

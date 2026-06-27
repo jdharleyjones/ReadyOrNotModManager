@@ -31,6 +31,8 @@ public partial class MainWindow : Window
     }
 
     private const string NexusApiKeyPage = "https://www.nexusmods.com/users/myaccount?tab=api%20access";
+    private const string ReadyOrNotNexusModsPage = "https://www.nexusmods.com/readyornot/mods";
+    private const string ReadyOrNotNexusCollectionsPage = "https://www.nexusmods.com/games/readyornot/collections";
     private readonly ObservableCollection<ModQueueItem> _queue = [];
     private readonly ObservableCollection<InstalledModRecord> _installedMods = [];
     private readonly ObservableCollection<ModProfile> _profiles = [];
@@ -158,7 +160,7 @@ public partial class MainWindow : Window
         var nexusVisual = DashboardStatusVisual.FromStatus(DashboardStatusKind.Nexus, nexusStatus);
         RailNexusStatusText.Text = nexusStatus;
         SetRailStatusIcon(RailNexusStatusIcon, GetNexusRailStatus(nexusStatus));
-        DashboardNexusStatusText.Text = nexusStatus;
+        UpdateDashboardNexusStatusText(nexusStatus);
         DashboardNexusHelperText.Text = nexusVisual.HelperText;
         DashboardNexusIcon.Kind = nexusVisual.Icon;
         DashboardNexusIcon.Foreground = ToneBrushes.ForTone(nexusVisual.Tone);
@@ -182,6 +184,20 @@ public partial class MainWindow : Window
         DashboardUpdateHelperText.Text = updateVisual.HelperText;
         DashboardUpdateIcon.Kind = updateVisual.Icon;
         DashboardUpdateIcon.Foreground = ToneBrushes.ForTone(updateVisual.Tone);
+    }
+
+    private void UpdateDashboardNexusStatusText(string status)
+    {
+        const string connectedPrefix = "Connected:";
+        if (status.StartsWith(connectedPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            DashboardNexusPrefixText.Visibility = Visibility.Visible;
+            DashboardNexusStatusText.Text = status[connectedPrefix.Length..].Trim();
+            return;
+        }
+
+        DashboardNexusPrefixText.Visibility = Visibility.Collapsed;
+        DashboardNexusStatusText.Text = status;
     }
 
     private void SetRailStatusIcon(PackIconMaterial icon, RailStatusState status)
@@ -239,9 +255,9 @@ public partial class MainWindow : Window
 
     private void DashboardNav_Click(object sender, RoutedEventArgs e) => ShowPage(DashboardPage, "Dashboard", "Ready or Not mod deployment overview");
 
-    private void ModsNav_Click(object sender, RoutedEventArgs e) => ShowPage(ModsPage, "Mods", "Installed files tracked by the local manifest");
+    private void ModsNav_Click(object sender, RoutedEventArgs e) => ShowPage(ModsPage, "Installed", "Installed files tracked by the local manifest");
 
-    private void QueueNav_Click(object sender, RoutedEventArgs e) => ShowPage(QueuePage, "Queue", "Download and deploy selected Nexus files");
+    private void QueueNav_Click(object sender, RoutedEventArgs e) => ShowPage(QueuePage, "Mods", "Download and deploy selected Nexus files");
 
     private void ModpacksNav_Click(object sender, RoutedEventArgs e) => ShowPage(ModpacksPage, "Modpacks", "Save and switch local mod profiles");
 
@@ -345,6 +361,18 @@ public partial class MainWindow : Window
     {
         OpenUrl(NexusApiKeyPage);
         SetStatus("Opened Nexus API key page.");
+    }
+
+    private void OpenReadyOrNotModsPage_Click(object sender, RoutedEventArgs e)
+    {
+        OpenUrl(ReadyOrNotNexusModsPage);
+        SetStatus("Opened Ready or Not Nexus mods page.");
+    }
+
+    private void OpenReadyOrNotCollectionsPage_Click(object sender, RoutedEventArgs e)
+    {
+        OpenUrl(ReadyOrNotNexusCollectionsPage);
+        SetStatus("Opened Ready or Not Nexus collections page.");
     }
 
     private void BrowseDownloadDirectory_Click(object sender, RoutedEventArgs e)
@@ -937,16 +965,22 @@ public partial class MainWindow : Window
 
     private void SaveProfileNew_Click(object sender, RoutedEventArgs e)
     {
-        var profile = CreateProfileFromQueue(new ModProfile
+        var profile = CreateProfileFromInstalledMods(new ModProfile
         {
             Name = string.IsNullOrWhiteSpace(ProfileNameBox.Text)
                 ? $"Modpack {DateTime.Now:yyyy-MM-dd HH-mm}"
                 : ProfileNameBox.Text.Trim()
         });
+        if (profile.Items.Count == 0)
+        {
+            SetStatus("Deploy mods before saving a modpack. Modpacks now snapshot installed mods only.");
+            return;
+        }
+
         CreateProfileStore().Save(profile, copyArchives: true);
         RefreshProfiles();
         ProfilesGrid.SelectedItem = _profiles.FirstOrDefault(item => item.ProfileId == profile.ProfileId);
-        SetStatus($"Saved modpack: {profile.Name}");
+        SetStatus($"Saved modpack from installed mods: {profile.Name}");
     }
 
     private void UpdateProfileSelected_Click(object sender, RoutedEventArgs e)
@@ -962,9 +996,16 @@ public partial class MainWindow : Window
             profile.Name = ProfileNameBox.Text.Trim();
         }
 
-        CreateProfileStore().Save(CreateProfileFromQueue(profile), copyArchives: true);
+        profile = CreateProfileFromInstalledMods(profile);
+        if (profile.Items.Count == 0)
+        {
+            SetStatus("Deploy mods before updating a modpack. Modpacks now snapshot installed mods only.");
+            return;
+        }
+
+        CreateProfileStore().Save(profile, copyArchives: true);
         RefreshProfiles();
-        SetStatus($"Updated modpack: {profile.Name}");
+        SetStatus($"Updated modpack from installed mods: {profile.Name}");
     }
 
     private void LoadProfileSelected_Click(object sender, RoutedEventArgs e)
@@ -976,7 +1017,7 @@ public partial class MainWindow : Window
         }
 
         LoadProfileIntoQueue(profile);
-        ShowPage(QueuePage, "Queue", "Download and deploy selected Nexus files");
+        ShowPage(QueuePage, "Mods", "Download and deploy selected Nexus files");
     }
 
     private async void ActivateProfileSelected_Click(object sender, RoutedEventArgs e)
@@ -1399,6 +1440,11 @@ public partial class MainWindow : Window
             LastInstallId = item.InstallId
         }).ToList();
         return profile;
+    }
+
+    private ModProfile CreateProfileFromInstalledMods(ModProfile profile)
+    {
+        return ModProfilePlanner.FromInstalledRecords(profile, CreateManifestStore().Load().Records);
     }
 
     private static ModQueueItem CreateQueueItem(ModProfile profile, ModProfileItem profileItem)
