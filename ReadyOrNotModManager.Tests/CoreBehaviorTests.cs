@@ -6,6 +6,9 @@ using ReadyOrNotModManager.Core.Manifest;
 using ReadyOrNotModManager.Core.Nexus;
 using ReadyOrNotModManager.Core.Downloads;
 using ReadyOrNotModManager.App;
+using SharpCompress.Common;
+using SharpCompress.Common.Options;
+using SharpCompress.Writers;
 
 namespace ReadyOrNotModManager.Tests;
 
@@ -83,6 +86,31 @@ public sealed class CoreBehaviorTests
 
         Assert.Equal(ArchiveFormat.Rar, format);
         Assert.Equal(".rar", format.Extension);
+    }
+
+    [Fact]
+    public void ArchiveFormatDetector_DetectsSevenZipHeaderWithSevenZipExtensionAlias()
+    {
+        var path = Path.Combine(CreateTempDirectory(), "download.7zip");
+        File.WriteAllBytes(path, [0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C, 0x00, 0x04]);
+
+        var format = ArchiveFormatDetector.Detect(path);
+
+        Assert.Equal(ArchiveFormat.SevenZipLong, format);
+        Assert.Equal(".7zip", format.Extension);
+    }
+
+    [Fact]
+    public void ArchiveScanner_ExtractsDeployableFilesFromSevenZipArchive()
+    {
+        var archivePath = CreateSevenZip(("nested/SevenZipMod.pak", "pak"), ("nested/readme.txt", "ignore"));
+        var destination = CreateTempDirectory();
+
+        var deployed = ArchiveScanner.ExtractDeployableFiles(archivePath, destination);
+
+        var deployedFile = Assert.Single(deployed);
+        Assert.EndsWith("SevenZipMod.pak", deployedFile, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("pak", File.ReadAllText(deployedFile));
     }
 
     [Fact]
@@ -288,6 +316,19 @@ public sealed class CoreBehaviorTests
         }
 
         return zipPath;
+    }
+
+    private static string CreateSevenZip(params (string Entry, string Content)[] entries)
+    {
+        var archivePath = Path.Combine(CreateTempDirectory(), "mod.7z");
+        using var writer = WriterFactory.OpenWriter(archivePath, ArchiveType.SevenZip, new WriterOptions(CompressionType.LZMA));
+        foreach (var (entry, content) in entries)
+        {
+            using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(content));
+            writer.Write(entry, stream, DateTime.UtcNow);
+        }
+
+        return archivePath;
     }
 
     private static string CreateTempDirectory()

@@ -212,7 +212,7 @@ public partial class MainWindow : Window
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
             Title = "Select downloaded mod archive",
-            Filter = "Mod archives (*.zip;*.rar;*.7z)|*.zip;*.rar;*.7z|All files (*.*)|*.*",
+            Filter = "Mod archives (*.zip;*.rar;*.7z;*.7zip)|*.zip;*.rar;*.7z;*.7zip|All files (*.*)|*.*",
             InitialDirectory = Directory.Exists(_settings.ImportDirectory) ? _settings.ImportDirectory : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
         };
 

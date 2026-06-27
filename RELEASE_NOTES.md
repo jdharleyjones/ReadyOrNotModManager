@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.0.1
+
+- Fix deployment for 7z archives by using SharpCompress archive handling instead of reader-only handling.
+- Add `.7zip` as an accepted import extension alias.
+- Improve unsupported archive errors so they name supported extensions: `.zip`, `.rar`, `.7z`, and `.7zip`.
+
 ## 1.0.0
 
 - Initial Windows desktop build for Ready or Not Nexus mod management.

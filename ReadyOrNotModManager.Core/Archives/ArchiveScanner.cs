@@ -1,5 +1,5 @@
+using SharpCompress.Archives;
 using SharpCompress.Common;
-using SharpCompress.Readers;
 
 namespace ReadyOrNotModManager.Core.Archives;
 
@@ -18,14 +18,13 @@ public static class ArchiveScanner
     public static IReadOnlyList<DeployableArchiveFile> FindDeployableFiles(string archivePath)
     {
         ArchiveFormatDetector.Detect(archivePath);
-        using var stream = File.OpenRead(archivePath);
-        using var reader = ReaderFactory.OpenReader(stream, new ReaderOptions());
+        using var archive = OpenSupportedArchive(archivePath);
         var files = new List<DeployableArchiveFile>();
 
-        while (reader.MoveToNextEntry())
+        foreach (var entry in archive.Entries)
         {
-            var key = reader.Entry.Key;
-            if (!reader.Entry.IsDirectory &&
+            var key = entry.Key;
+            if (!entry.IsDirectory &&
                 !string.IsNullOrWhiteSpace(key) &&
                 DeployableExtensions.Contains(Path.GetExtension(key)))
             {
@@ -40,14 +39,13 @@ public static class ArchiveScanner
     {
         Directory.CreateDirectory(destinationDirectory);
         ArchiveFormatDetector.Detect(archivePath);
-        using var stream = File.OpenRead(archivePath);
-        using var reader = ReaderFactory.OpenReader(stream, new ReaderOptions());
+        using var archive = OpenSupportedArchive(archivePath);
         var deployed = new List<string>();
 
-        while (reader.MoveToNextEntry())
+        foreach (var entry in archive.Entries)
         {
-            var key = reader.Entry.Key;
-            if (reader.Entry.IsDirectory ||
+            var key = entry.Key;
+            if (entry.IsDirectory ||
                 string.IsNullOrWhiteSpace(key) ||
                 !DeployableExtensions.Contains(Path.GetExtension(key)))
             {
@@ -55,11 +53,27 @@ public static class ArchiveScanner
             }
 
             var destination = GetUniqueDestination(destinationDirectory, Path.GetFileName(key));
-            reader.WriteEntryToFile(destination, new ExtractionOptions { ExtractFullPath = false, Overwrite = false });
+            using var input = entry.OpenEntryStream();
+            using var output = File.Create(destination);
+            input.CopyTo(output);
             deployed.Add(destination);
         }
 
         return deployed;
+    }
+
+    private static IArchive OpenSupportedArchive(string archivePath)
+    {
+        try
+        {
+            return ArchiveFactory.OpenArchive(archivePath, new SharpCompress.Readers.ReaderOptions());
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException)
+        {
+            throw new InvalidDataException(
+                "The archive could not be read. Supported archive files are .zip, .rar, .7z, and .7zip. If this file was still downloading, download it again and import the completed archive.",
+                ex);
+        }
     }
 
     private static string GetUniqueDestination(string destinationDirectory, string fileName)

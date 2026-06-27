@@ -38,6 +38,9 @@ public sealed class DownloadManager(HttpClient httpClient)
     {
         var invalid = Path.GetInvalidFileNameChars();
         var sanitized = new string(fileName.Select(character => invalid.Contains(character) ? '_' : character).ToArray());
+        sanitized = sanitized.EndsWith(".7zip", StringComparison.OrdinalIgnoreCase)
+            ? Path.ChangeExtension(sanitized, ".7z")
+            : sanitized;
         return string.IsNullOrWhiteSpace(sanitized) ? "mod.zip" : sanitized;
     }
 

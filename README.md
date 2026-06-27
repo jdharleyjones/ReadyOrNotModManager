@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.0.0`
+Version: `1.0.1`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -38,7 +38,7 @@ The executable will be written to `publish\win-x64`.
 
 The app stores settings under `%LOCALAPPDATA%\ReadyOrNotModManager`; the API key is protected with Windows user-scope DPAPI. Deployed files are tracked in a local install manifest so selected mods can be uninstalled later.
 
-The downloader supports ZIP, RAR, and 7z archives. If Nexus serves a RAR or 7z file when the queue expected a zip, the app detects the real archive type and corrects the saved extension.
+The downloader supports ZIP, RAR, 7z, and `.7zip` archive aliases. If Nexus serves a RAR or 7z file when the queue expected a zip, the app detects the real archive type and corrects the saved extension.
 
 Use **Import archive** to attach a manually downloaded ZIP/RAR/7z file to the selected queue row. If nothing is selected, the app creates a standalone imported-archive row. Use **Delete download** to remove selected archive files from disk without uninstalling deployed mod files.
 

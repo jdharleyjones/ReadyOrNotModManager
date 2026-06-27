@@ -5,6 +5,7 @@ public sealed record ArchiveFormat(string Name, string Extension)
     public static readonly ArchiveFormat Zip = new("ZIP", ".zip");
     public static readonly ArchiveFormat Rar = new("RAR", ".rar");
     public static readonly ArchiveFormat SevenZip = new("7z", ".7z");
+    public static readonly ArchiveFormat SevenZipLong = new("7zip", ".7zip");
 }
 
 public static class ArchiveFormatDetector
@@ -39,7 +40,9 @@ public static class ArchiveFormatDetector
             header[4] == 0x27 &&
             header[5] == 0x1C)
         {
-            return ArchiveFormat.SevenZip;
+            return Path.GetExtension(archivePath).Equals(".7zip", StringComparison.OrdinalIgnoreCase)
+                ? ArchiveFormat.SevenZipLong
+                : ArchiveFormat.SevenZip;
         }
 
         throw new InvalidDataException("The downloaded file is not a supported archive. Open the Nexus page and import the completed mod archive manually.");
