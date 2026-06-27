@@ -1,5 +1,7 @@
 using System.IO.Compression;
 using System.Net;
+using System.Windows;
+using System.Windows.Media;
 using ReadyOrNotModManager.Core.Archives;
 using ReadyOrNotModManager.Core.Deployment;
 using ReadyOrNotModManager.Core.Manifest;
@@ -690,6 +692,21 @@ public sealed class CoreBehaviorTests
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "hacker");
 
         Assert.Equal(ThemeManager.DefaultThemeName, ThemeManager.ResolveThemeName("missing"));
+    }
+
+    [Fact]
+    public void ThemeManager_ReplacesFrozenBrushResources()
+    {
+        var resources = new ResourceDictionary();
+        var frozenBrush = new SolidColorBrush(Color.FromRgb(1, 2, 3));
+        frozenBrush.Freeze();
+        resources["ShellBrush"] = frozenBrush;
+
+        ThemeManager.ApplyTheme(resources, "claude");
+
+        var updatedBrush = Assert.IsType<SolidColorBrush>(resources["ShellBrush"]);
+        Assert.False(updatedBrush.IsFrozen);
+        Assert.NotEqual(frozenBrush, updatedBrush);
     }
 
     [Fact]

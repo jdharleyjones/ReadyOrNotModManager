@@ -62,12 +62,6 @@ public static class ThemeManager
 
     private static void SetBrush(ResourceDictionary resources, string key, MediaColor color)
     {
-        if (resources[key] is SolidColorBrush brush)
-        {
-            brush.Color = color;
-            return;
-        }
-
         resources[key] = new SolidColorBrush(color);
     }
 }

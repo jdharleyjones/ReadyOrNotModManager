@@ -1,5 +1,10 @@
 # Release Notes
 
+## 1.2.5
+
+- Fix a 1.2.4 startup crash where WPF theme brush resources could be frozen/read-only in the published executable.
+- Add a regression test covering frozen theme brushes.
+
 ## 1.2.4
 
 - Add Remove selected on the Queue page for accidental or duplicate queue entries.

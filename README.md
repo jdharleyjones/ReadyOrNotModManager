@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.2.4`
+Version: `1.2.5`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -54,7 +54,7 @@ Use **Modpacks** to save the current queue as a local profile, load a profile ba
 
 Long download and deploy operations report overall progress in the bottom status bar. Failed items are skipped so the rest of the queue can continue.
 
-Version 1.2.4 adds queue cleanup, persistent colour themes, modpack rename support, dashboard update status, a polished Downloads WIP marker, and dashboard quick-action layout improvements.
+Version 1.2.5 fixes a 1.2.4 startup crash caused by frozen WPF theme brushes. Version 1.2.4 added queue cleanup, persistent colour themes, modpack rename support, dashboard update status, a polished Downloads WIP marker, and dashboard quick-action layout improvements.
 
 Use the **Colour scheme** selector in Settings to switch between Tactical default, Claude, ChatGPT, and Hacker themes. The selected theme is saved locally and applied on future launches.
 
