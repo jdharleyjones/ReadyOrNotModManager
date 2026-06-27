@@ -51,6 +51,29 @@ public sealed class NexusClient(HttpClient httpClient, string apiKey)
             .ToArray() ?? [];
     }
 
+    public async Task<NexusApiValidationResult> ValidateApiKeyAsync(CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{BaseRestUrl}/users/validate.json");
+        AddHeaders(request);
+
+        using var response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        if (!response.IsSuccessStatusCode)
+        {
+            return new NexusApiValidationResult(
+                false,
+                string.Empty,
+                false,
+                $"Nexus API key validation failed: {(int)response.StatusCode} {response.ReasonPhrase}");
+        }
+
+        var payload = await response.Content.ReadFromJsonAsync<ValidateResponseDto>(cancellationToken).ConfigureAwait(false);
+        return new NexusApiValidationResult(
+            true,
+            payload?.Name ?? string.Empty,
+            payload?.IsPremium ?? false,
+            "Nexus API key validated.");
+    }
+
     private void AddHeaders(HttpRequestMessage request)
     {
         request.Headers.TryAddWithoutValidation("apikey", apiKey);
@@ -85,6 +108,15 @@ public sealed class NexusClient(HttpClient httpClient, string apiKey)
 
         [JsonPropertyName("is_primary")]
         public bool IsPrimary { get; set; }
+    }
+
+    private sealed class ValidateResponseDto
+    {
+        [JsonPropertyName("name")]
+        public string? Name { get; set; }
+
+        [JsonPropertyName("is_premium")]
+        public bool IsPremium { get; set; }
     }
 }
 

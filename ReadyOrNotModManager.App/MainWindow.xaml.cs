@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 using ReadyOrNotModManager.Core.Archives;
 using ReadyOrNotModManager.Core.Deployment;
 using ReadyOrNotModManager.Core.Diagnostics;
@@ -10,6 +12,7 @@ using ReadyOrNotModManager.Core.Downloads;
 using ReadyOrNotModManager.Core.Manifest;
 using ReadyOrNotModManager.Core.Nexus;
 using ReadyOrNotModManager.Core.Profiles;
+using ReadyOrNotModManager.App.Services;
 using Forms = System.Windows.Forms;
 
 namespace ReadyOrNotModManager.App;
@@ -18,9 +21,13 @@ public partial class MainWindow : Window
 {
     private const string NexusApiKeyPage = "https://www.nexusmods.com/users/myaccount?tab=api%20access";
     private readonly ObservableCollection<ModQueueItem> _queue = [];
+    private readonly ObservableCollection<InstalledModRecord> _installedMods = [];
+    private readonly ObservableCollection<ModProfile> _profiles = [];
+    private readonly ObservableCollection<ErrorLogEntry> _errors = [];
     private readonly LocalSettingsStore _settingsStore;
     private readonly string _appDataDirectory;
     private LocalSettings _settings = new();
+    private string _lastNexusStatus = "Not tested";
 
     public MainWindow()
     {
@@ -28,7 +35,12 @@ public partial class MainWindow : Window
         _appDataDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ReadyOrNotModManager");
         _settingsStore = new LocalSettingsStore(_appDataDirectory);
         QueueGrid.ItemsSource = _queue;
+        InstalledModsGrid.ItemsSource = _installedMods;
+        ProfilesGrid.ItemsSource = _profiles;
+        ErrorsGrid.ItemsSource = _errors;
         LoadSettings();
+        RefreshShellData();
+        ShowInitialView();
     }
 
     private void LoadSettings()
@@ -40,7 +52,110 @@ public partial class MainWindow : Window
         ImportDirectoryBox.Text = _settings.ImportDirectory;
         ProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
         AdvancedOptionsBox.IsChecked = _settings.AdvancedOptionsEnabled;
+        SetupApiKeyBox.Password = _settings.ApiKey;
+        SetupDownloadDirectoryBox.Text = _settings.DownloadDirectory;
+        SetupGameDirectoryBox.Text = _settings.ReadyOrNotDirectory;
+        SetupImportDirectoryBox.Text = _settings.ImportDirectory;
+        SetupProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
+        ValidateSetupFields();
     }
+
+    private void ShowInitialView()
+    {
+        if (SetupGate.ShouldShowSetup(_settings))
+        {
+            ShellRoot.Visibility = Visibility.Collapsed;
+            SetupRoot.Visibility = Visibility.Visible;
+            ValidateSetupFields();
+            return;
+        }
+
+        SetupRoot.Visibility = Visibility.Collapsed;
+        ShellRoot.Visibility = Visibility.Visible;
+        ShowPage(DashboardPage, "Dashboard", "Ready or Not mod deployment overview");
+    }
+
+    private void RefreshShellData()
+    {
+        RefreshInstalledMods();
+        RefreshProfiles();
+        RefreshErrors();
+        RefreshDashboard();
+    }
+
+    private void RefreshInstalledMods()
+    {
+        _installedMods.Clear();
+        foreach (var record in CreateManifestStore().Load().Records.OrderByDescending(record => record.InstalledAtUtc))
+        {
+            _installedMods.Add(record);
+        }
+    }
+
+    private void RefreshProfiles()
+    {
+        _profiles.Clear();
+        Directory.CreateDirectory(_settings.ProfileLibraryDirectory);
+        foreach (var profile in CreateProfileStore().LoadAll())
+        {
+            _profiles.Add(profile);
+        }
+    }
+
+    private void RefreshErrors()
+    {
+        _errors.Clear();
+        foreach (var entry in CreateErrorLogStore().Load().Entries)
+        {
+            _errors.Add(entry);
+        }
+    }
+
+    private void RefreshDashboard()
+    {
+        var gameOk = ReadyOrNotPaths.LooksLikeInstallDirectory(_settings.ReadyOrNotDirectory);
+        var gameStatus = gameOk ? "Detected" : "Not detected";
+        RailGameStatusText.Text = gameStatus;
+        DashboardGameStatusText.Text = gameStatus;
+        RailNexusStatusText.Text = _lastNexusStatus;
+        DashboardNexusStatusText.Text = string.IsNullOrWhiteSpace(_settings.ApiKey) ? "Missing key" : _lastNexusStatus;
+
+        var summary = DashboardSummaryFactory.Create(CreateManifestStore().Load(), _queue, CreateErrorLogStore().Load());
+        InstalledModCountText.Text = summary.InstalledModCount.ToString();
+        PendingQueueCountText.Text = summary.PendingQueueCount.ToString();
+        RecentActivityList.ItemsSource = summary.RecentActivity.Count == 0
+            ? [new RecentActivityItem(DateTimeOffset.UtcNow, "No recent activity yet")]
+            : summary.RecentActivity;
+    }
+
+    private void ShowPage(FrameworkElement page, string title, string subtitle)
+    {
+        foreach (var view in new FrameworkElement[] { DashboardPage, ModsPage, QueuePage, ModpacksPage, DownloadsPage, SettingsPage, LogsPage })
+        {
+            view.Visibility = Visibility.Collapsed;
+            view.Opacity = 0;
+        }
+
+        page.Visibility = Visibility.Visible;
+        page.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150)));
+        PageTitleText.Text = title;
+        PageSubtitleText.Text = subtitle;
+        RefreshShellData();
+    }
+
+    private void DashboardNav_Click(object sender, RoutedEventArgs e) => ShowPage(DashboardPage, "Dashboard", "Ready or Not mod deployment overview");
+
+    private void ModsNav_Click(object sender, RoutedEventArgs e) => ShowPage(ModsPage, "Mods", "Installed files tracked by the local manifest");
+
+    private void QueueNav_Click(object sender, RoutedEventArgs e) => ShowPage(QueuePage, "Queue", "Download and deploy selected Nexus files");
+
+    private void ModpacksNav_Click(object sender, RoutedEventArgs e) => ShowPage(ModpacksPage, "Modpacks", "Save and switch local mod profiles");
+
+    private void DownloadsNav_Click(object sender, RoutedEventArgs e) => ShowPage(DownloadsPage, "Downloads", "Archive storage and browser fallback imports");
+
+    private void SettingsNav_Click(object sender, RoutedEventArgs e) => ShowPage(SettingsPage, "Settings", "Connection, folders, and advanced options");
+
+    private void LogsNav_Click(object sender, RoutedEventArgs e) => ShowPage(LogsPage, "Logs/Errors", "Download and deployment failures");
 
     private void SaveSettings_Click(object sender, RoutedEventArgs e)
     {
@@ -92,6 +207,112 @@ public partial class MainWindow : Window
         }
     }
 
+    private void BrowseSetupDownloadDirectory_Click(object sender, RoutedEventArgs e)
+    {
+        if (TryChooseFolder(SetupDownloadDirectoryBox.Text, out var selected))
+        {
+            SetupDownloadDirectoryBox.Text = selected;
+            ValidateSetupFields();
+        }
+    }
+
+    private void BrowseSetupGameDirectory_Click(object sender, RoutedEventArgs e)
+    {
+        if (TryChooseFolder(SetupGameDirectoryBox.Text, out var selected))
+        {
+            SetupGameDirectoryBox.Text = selected;
+            ValidateSetupFields();
+        }
+    }
+
+    private void BrowseSetupImportDirectory_Click(object sender, RoutedEventArgs e)
+    {
+        if (TryChooseFolder(SetupImportDirectoryBox.Text, out var selected))
+        {
+            SetupImportDirectoryBox.Text = selected;
+            ValidateSetupFields();
+        }
+    }
+
+    private void BrowseSetupProfileLibraryDirectory_Click(object sender, RoutedEventArgs e)
+    {
+        if (TryChooseFolder(SetupProfileLibraryDirectoryBox.Text, out var selected))
+        {
+            SetupProfileLibraryDirectoryBox.Text = selected;
+            ValidateSetupFields();
+        }
+    }
+
+    private async void TestConnection_Click(object sender, RoutedEventArgs e)
+    {
+        await RunUiTaskAsync(async () =>
+        {
+            var apiKey = SetupRoot.Visibility == Visibility.Visible ? SetupApiKeyBox.Password.Trim() : ApiKeyBox.Password.Trim();
+            if (string.IsNullOrWhiteSpace(apiKey))
+            {
+                _lastNexusStatus = "Missing key";
+                SetStatus("Enter a Nexus API key before testing.");
+                ValidateSetupFields();
+                return;
+            }
+
+            using var http = new HttpClient();
+            var result = await new NexusClient(http, apiKey).ValidateApiKeyAsync(CancellationToken.None);
+            _lastNexusStatus = result.IsValid
+                ? string.IsNullOrWhiteSpace(result.UserName) ? "Connected" : $"Connected: {result.UserName}"
+                : "Connection failed";
+            SetStatus(result.Message);
+            ValidateSetupFields();
+            RefreshDashboard();
+        });
+    }
+
+    private void AutoDetectGameFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var detected = ReadyOrNotInstallDetector.FindInstallDirectory();
+        if (string.IsNullOrWhiteSpace(detected))
+        {
+            SetStatus("Ready or Not was not found in the usual Steam library folders.");
+            SetupGameStatusText.Text = "Auto-detect could not find Ready or Not";
+            SetupGameStatusText.Foreground = FindBrush("DangerBrush");
+            return;
+        }
+
+        SetupGameDirectoryBox.Text = detected;
+        GameDirectoryBox.Text = detected;
+        SetStatus("Ready or Not folder detected.");
+        ValidateSetupFields();
+    }
+
+    private void ContinueSetup_Click(object sender, RoutedEventArgs e)
+    {
+        ValidateSetupFields();
+        if (string.IsNullOrWhiteSpace(SetupApiKeyBox.Password) ||
+            !ReadyOrNotPaths.LooksLikeInstallDirectory(SetupGameDirectoryBox.Text))
+        {
+            SetupMessageText.Text = "Add a Nexus API key and a valid Ready or Not folder before continuing.";
+            SetupMessageText.Foreground = FindBrush("DangerBrush");
+            return;
+        }
+
+        CopySetupFieldsToSettingsFields();
+        SaveSettings(setupCompleted: true, forceSetupWizard: false);
+        SetupRoot.Visibility = Visibility.Collapsed;
+        ShellRoot.Visibility = Visibility.Visible;
+        RefreshShellData();
+        ShowPage(DashboardPage, "Dashboard", "Ready or Not mod deployment overview");
+        SetStatus("Setup complete.");
+    }
+
+    private void ResetSetupWizard_Click(object sender, RoutedEventArgs e)
+    {
+        SaveSettings(setupCompleted: false, forceSetupWizard: true);
+        LoadSettings();
+        ShellRoot.Visibility = Visibility.Collapsed;
+        SetupRoot.Visibility = Visibility.Visible;
+        SetStatus("Setup wizard reset.");
+    }
+
     private void BrowseProfileLibraryDirectory_Click(object sender, RoutedEventArgs e)
     {
         if (TryChooseFolder(ProfileLibraryDirectoryBox.Text, out var selected))
@@ -128,6 +349,7 @@ public partial class MainWindow : Window
             }
 
             UrlBox.Clear();
+            RefreshDashboard();
         });
     }
 
@@ -222,6 +444,7 @@ public partial class MainWindow : Window
             }
 
             SetProgress(1, "Download pass complete");
+            RefreshDashboard();
             SetStatus("Download pass complete.");
         });
     }
@@ -352,6 +575,7 @@ public partial class MainWindow : Window
             }
 
             SetProgress(1, "Deployment complete");
+            RefreshShellData();
             SetStatus("Deployment complete.");
         });
     }
@@ -379,6 +603,7 @@ public partial class MainWindow : Window
         }
 
         SetStatus("Uninstall complete.");
+        RefreshShellData();
     }
 
     private void ClearCompleted_Click(object sender, RoutedEventArgs e)
@@ -387,6 +612,8 @@ public partial class MainWindow : Window
         {
             _queue.Remove(item);
         }
+
+        RefreshDashboard();
     }
 
     private void OpenProfiles_Click(object sender, RoutedEventArgs e)
@@ -411,6 +638,201 @@ public partial class MainWindow : Window
             Owner = this
         };
         window.ShowDialog();
+    }
+
+    private void OpenModsFolder_Click(object sender, RoutedEventArgs e)
+    {
+        SaveSettings();
+        var paks = ReadyOrNotPaths.GetPaksDirectory(_settings.ReadyOrNotDirectory);
+        if (Directory.Exists(paks))
+        {
+            OpenFolder(paks);
+            return;
+        }
+
+        SetStatus("Ready or Not Paks folder was not found.");
+    }
+
+    private void OpenGameFolder_Click(object sender, RoutedEventArgs e)
+    {
+        SaveSettings();
+        if (Directory.Exists(_settings.ReadyOrNotDirectory))
+        {
+            OpenFolder(_settings.ReadyOrNotDirectory);
+            return;
+        }
+
+        SetStatus("Ready or Not install folder was not found.");
+    }
+
+    private void UninstallInstalledSelected_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = InstalledModsGrid.SelectedItems.Cast<InstalledModRecord>().ToArray();
+        if (selected.Length == 0)
+        {
+            SetStatus("Select installed mods before uninstalling.");
+            return;
+        }
+
+        var manager = CreateDeploymentManager();
+        foreach (var record in selected)
+        {
+            manager.Uninstall(record.InstallId);
+        }
+
+        RefreshShellData();
+        SetStatus("Selected installed mods uninstalled.");
+    }
+
+    private void SaveProfileNew_Click(object sender, RoutedEventArgs e)
+    {
+        var profile = CreateProfileFromQueue(new ModProfile
+        {
+            Name = string.IsNullOrWhiteSpace(ProfileNameBox.Text)
+                ? $"Modpack {DateTime.Now:yyyy-MM-dd HH-mm}"
+                : ProfileNameBox.Text.Trim()
+        });
+        CreateProfileStore().Save(profile, copyArchives: true);
+        RefreshProfiles();
+        ProfilesGrid.SelectedItem = _profiles.FirstOrDefault(item => item.ProfileId == profile.ProfileId);
+        SetStatus($"Saved modpack: {profile.Name}");
+    }
+
+    private void UpdateProfileSelected_Click(object sender, RoutedEventArgs e)
+    {
+        var profile = GetSelectedProfile();
+        if (profile is null)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(ProfileNameBox.Text))
+        {
+            profile.Name = ProfileNameBox.Text.Trim();
+        }
+
+        CreateProfileStore().Save(CreateProfileFromQueue(profile), copyArchives: true);
+        RefreshProfiles();
+        SetStatus($"Updated modpack: {profile.Name}");
+    }
+
+    private void LoadProfileSelected_Click(object sender, RoutedEventArgs e)
+    {
+        var profile = GetSelectedProfile();
+        if (profile is null)
+        {
+            return;
+        }
+
+        LoadProfileIntoQueue(profile);
+        ShowPage(QueuePage, "Queue", "Download and deploy selected Nexus files");
+    }
+
+    private async void ActivateProfileSelected_Click(object sender, RoutedEventArgs e)
+    {
+        var profile = GetSelectedProfile();
+        if (profile is null)
+        {
+            return;
+        }
+
+        await RunUiTaskAsync(async () =>
+        {
+            await ActivateProfileAsync(profile);
+            RefreshShellData();
+        });
+    }
+
+    private void DeleteProfileSelected_Click(object sender, RoutedEventArgs e)
+    {
+        var profile = GetSelectedProfile();
+        if (profile is null)
+        {
+            return;
+        }
+
+        var result = System.Windows.MessageBox.Show(
+            this,
+            $"Delete the local profile \"{profile.Name}\"? This removes copied profile archives, but does not uninstall active game files.",
+            "Ready or Not Mod Manager",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        CreateProfileStore().Delete(profile.ProfileId);
+        RefreshProfiles();
+        SetStatus($"Deleted modpack: {profile.Name}");
+    }
+
+    private void OpenErrorNexus_Click(object sender, RoutedEventArgs e)
+    {
+        var entry = GetSelectedError();
+        if (entry is not null && !string.IsNullOrWhiteSpace(entry.SourceUrl))
+        {
+            OpenUrl(entry.SourceUrl);
+        }
+    }
+
+    private void OpenErrorGameFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var entry = GetSelectedError();
+        if (entry is null)
+        {
+            return;
+        }
+
+        var paks = ReadyOrNotPaths.GetPaksDirectory(entry.ReadyOrNotDirectory);
+        if (Directory.Exists(paks))
+        {
+            OpenFolder(paks);
+        }
+        else if (Directory.Exists(entry.ReadyOrNotDirectory))
+        {
+            OpenFolder(entry.ReadyOrNotDirectory);
+        }
+    }
+
+    private void OpenErrorArchiveFolder_Click(object sender, RoutedEventArgs e)
+    {
+        var entry = GetSelectedError();
+        var directory = entry is null ? null : Path.GetDirectoryName(entry.ArchivePath);
+        if (!string.IsNullOrWhiteSpace(directory) && Directory.Exists(directory))
+        {
+            OpenFolder(directory);
+        }
+    }
+
+    private void CopyErrorManualFix_Click(object sender, RoutedEventArgs e)
+    {
+        var entry = GetSelectedError();
+        if (entry is null)
+        {
+            return;
+        }
+
+        System.Windows.Clipboard.SetText($"""
+            {entry.ModName} could not be {entry.Operation.ToLowerInvariant()} automatically.
+
+            Reason: {entry.Message}
+
+            You may need to download this mod manually from Nexus Mods, then use Import archive in the manager or manually place the mod's .pak/.ucas/.utoc files into the Ready or Not Paks folder.
+
+            Nexus page: {entry.SourceUrl}
+            Archive: {entry.ArchivePath}
+            Ready or Not folder: {entry.ReadyOrNotDirectory}
+            """);
+        SetStatus("Manual fix note copied.");
+    }
+
+    private void ClearErrors_Click(object sender, RoutedEventArgs e)
+    {
+        CreateErrorLogStore().Clear();
+        RefreshErrors();
+        RefreshDashboard();
+        SetStatus("Errors cleared.");
     }
 
     private void ClearUserData_Click(object sender, RoutedEventArgs e)
@@ -445,10 +867,13 @@ public partial class MainWindow : Window
         AdvancedOptionsBox.IsChecked = false;
         UrlBox.Clear();
         SetProgress(0, string.Empty);
+        LoadSettings();
+        ShellRoot.Visibility = Visibility.Collapsed;
+        SetupRoot.Visibility = Visibility.Visible;
         SetStatus("User data cleared.");
     }
 
-    private void SaveSettings()
+    private void SaveSettings(bool? setupCompleted = null, bool? forceSetupWizard = null)
     {
         var defaults = new LocalSettings();
         _settings = new LocalSettings
@@ -459,9 +884,71 @@ public partial class MainWindow : Window
             ImportDirectory = string.IsNullOrWhiteSpace(ImportDirectoryBox.Text) ? defaults.ImportDirectory : ImportDirectoryBox.Text.Trim(),
             ProfileLibraryDirectory = string.IsNullOrWhiteSpace(ProfileLibraryDirectoryBox.Text) ? defaults.ProfileLibraryDirectory : ProfileLibraryDirectoryBox.Text.Trim(),
             ActiveProfileId = _settings.ActiveProfileId,
-            AdvancedOptionsEnabled = AdvancedOptionsBox.IsChecked == true
+            AdvancedOptionsEnabled = AdvancedOptionsBox.IsChecked == true,
+            SetupCompleted = setupCompleted ?? _settings.SetupCompleted,
+            ForceSetupWizard = forceSetupWizard ?? _settings.ForceSetupWizard
         };
         _settingsStore.Save(_settings);
+        ValidateSetupFields();
+        RefreshDashboard();
+    }
+
+    private void CopySetupFieldsToSettingsFields()
+    {
+        ApiKeyBox.Password = SetupApiKeyBox.Password.Trim();
+        GameDirectoryBox.Text = SetupGameDirectoryBox.Text.Trim();
+        DownloadDirectoryBox.Text = SetupDownloadDirectoryBox.Text.Trim();
+        ImportDirectoryBox.Text = SetupImportDirectoryBox.Text.Trim();
+        ProfileLibraryDirectoryBox.Text = SetupProfileLibraryDirectoryBox.Text.Trim();
+    }
+
+    private void ValidateSetupFields()
+    {
+        var hasApiKey = !string.IsNullOrWhiteSpace(SetupApiKeyBox.Password);
+        var gameValid = ReadyOrNotPaths.LooksLikeInstallDirectory(SetupGameDirectoryBox.Text);
+        var downloadValid = ValidateOrCreateFolderText(SetupDownloadDirectoryBox.Text);
+        var importValid = ValidateOrCreateFolderText(SetupImportDirectoryBox.Text);
+        var libraryValid = ValidateOrCreateFolderText(SetupProfileLibraryDirectoryBox.Text);
+
+        SetValidation(SetupApiKeyBox, SetupNexusStatusText, hasApiKey, hasApiKey ? _lastNexusStatus : "Nexus API key is required");
+        SetValidation(SetupGameDirectoryBox, SetupGameStatusText, gameValid, gameValid ? "Ready or Not folder validated" : "Choose the folder that contains ReadyOrNot\\Content\\Paks");
+        var foldersOk = downloadValid && importValid && libraryValid;
+        SetValidation(SetupDownloadDirectoryBox, SetupFoldersStatusText, foldersOk, foldersOk ? "Storage folders are ready" : "Choose valid storage folders");
+        SetValidation(SetupImportDirectoryBox, null, importValid, string.Empty);
+        SetValidation(SetupProfileLibraryDirectoryBox, null, libraryValid, string.Empty);
+    }
+
+    private static bool ValidateOrCreateFolderText(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(path.Trim());
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return false;
+        }
+    }
+
+    private void SetValidation(System.Windows.Controls.Control control, TextBlock? statusText, bool isValid, string message)
+    {
+        control.BorderBrush = isValid ? FindBrush("SuccessBrush") : FindBrush("DangerBrush");
+        if (statusText is not null)
+        {
+            statusText.Text = message;
+            statusText.Foreground = isValid ? FindBrush("SuccessBrush") : FindBrush("DangerBrush");
+        }
+    }
+
+    private System.Windows.Media.Brush FindBrush(string key)
+    {
+        return (System.Windows.Media.Brush)FindResource(key);
     }
 
     private void AddQueueItem(NexusModFile file)
@@ -643,6 +1130,28 @@ public partial class MainWindow : Window
             SelectedArchiveEntries = profileItem.SelectedArchiveEntries.ToList(),
             Status = File.Exists(profileItem.ArchivePath) ? "Loaded from profile" : "Missing archive"
         };
+    }
+
+    private ModProfile? GetSelectedProfile()
+    {
+        var profile = ProfilesGrid.SelectedItem as ModProfile;
+        if (profile is null)
+        {
+            SetStatus("Select a modpack first.");
+        }
+
+        return profile;
+    }
+
+    private ErrorLogEntry? GetSelectedError()
+    {
+        var entry = ErrorsGrid.SelectedItem as ErrorLogEntry;
+        if (entry is null)
+        {
+            SetStatus("Select an error first.");
+        }
+
+        return entry;
     }
 
     private DeploymentManager CreateDeploymentManager()

@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.1.0`
+Version: `1.2.0`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -28,15 +28,17 @@ The executable will be written to `publish\win-x64`.
 
 ## Basic use
 
-1. Paste and save your Nexus Mods API key.
-   - Use **Get API key** in the app to open the Nexus account API access page.
-2. Choose a download folder for retained zip archives.
-3. Choose the Ready or Not install folder. The app expects `ReadyOrNot\Content\Paks` beneath that folder.
-4. Paste a Ready or Not Nexus mod URL or collection URL.
-5. Download missing files. If Nexus requires browser-based download, the app opens the Nexus page and you can import the completed archive.
-6. Deploy selected queue items.
+1. Complete the setup wizard on first launch.
+   - Use **Get API key** to open the Nexus account API access page.
+   - Use **Test Connection** to validate the key.
+   - Use **Auto-detect Game Folder** or choose the Ready or Not install folder manually.
+2. Use the dashboard quick actions to add Nexus URLs, import archives, deploy the queue, or open game folders.
+3. Use the navigation sidebar for Dashboard, Mods, Queue, Modpacks, Downloads, Settings, and Logs/Errors.
+4. Edit API/folder settings later from **Settings**. Use **Reset setup wizard** there to rerun the guided setup flow.
 
 The app stores settings under `%LOCALAPPDATA%\ReadyOrNotModManager`; the API key is protected with Windows user-scope DPAPI. Deployed files are tracked in a local install manifest so selected mods can be uninstalled later.
+
+The main dashboard shows game detection, Nexus connection, installed mod count, pending queue count, recent activity, and common quick actions. Setup fields are no longer permanently shown in the sidebar after configuration.
 
 The downloader supports ZIP, RAR, 7z, and `.7zip` archive aliases. If Nexus serves a RAR or 7z file when the queue expected a zip, the app detects the real archive type and corrects the saved extension.
 

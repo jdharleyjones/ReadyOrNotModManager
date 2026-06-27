@@ -8,6 +8,7 @@ using ReadyOrNotModManager.Core.Downloads;
 using ReadyOrNotModManager.Core.Diagnostics;
 using ReadyOrNotModManager.Core.Profiles;
 using ReadyOrNotModManager.App;
+using ReadyOrNotModManager.App.Services;
 using SharpCompress.Common;
 using SharpCompress.Common.Options;
 using SharpCompress.Writers;
@@ -243,6 +244,37 @@ public sealed class CoreBehaviorTests
     }
 
     [Fact]
+    public void LocalSettingsStore_LoadsOldSettingsWithSetupFieldsDefaulted()
+    {
+        var directory = CreateTempDirectory();
+        File.WriteAllText(Path.Combine(directory, "settings.json"), """
+            {
+              "DownloadDirectory": "C:\\Downloads\\Mods",
+              "ReadyOrNotDirectory": "E:\\Steam\\Ready or Not",
+              "ImportDirectory": "C:\\Users\\Tester"
+            }
+            """);
+
+        var loaded = new LocalSettingsStore(directory).Load();
+
+        Assert.False(loaded.SetupCompleted);
+        Assert.False(loaded.ForceSetupWizard);
+    }
+
+    [Fact]
+    public void SetupGate_RequiresWizardWhenEssentialsAreMissingOrInvalid()
+    {
+        var root = CreateTempDirectory();
+        var validGame = Path.Combine(root, "Ready or Not");
+        Directory.CreateDirectory(Path.Combine(validGame, "ReadyOrNot", "Content", "Paks"));
+
+        Assert.True(SetupGate.ShouldShowSetup(new LocalSettings { ApiKey = "", ReadyOrNotDirectory = validGame }));
+        Assert.True(SetupGate.ShouldShowSetup(new LocalSettings { ApiKey = "abc", ReadyOrNotDirectory = Path.Combine(root, "Missing") }));
+        Assert.True(SetupGate.ShouldShowSetup(new LocalSettings { ApiKey = "abc", ReadyOrNotDirectory = validGame, ForceSetupWizard = true }));
+        Assert.False(SetupGate.ShouldShowSetup(new LocalSettings { ApiKey = "abc", ReadyOrNotDirectory = validGame, SetupCompleted = true }));
+    }
+
+    [Fact]
     public void DeploymentManager_ExtractsFilesToPaksFolderAndUninstallsManifestRecord()
     {
         var root = CreateTempDirectory();
@@ -377,6 +409,86 @@ public sealed class CoreBehaviorTests
         var uri = await client.GetDownloadLinkAsync("readyornot", 12, 34, CancellationToken.None);
 
         Assert.Equal("https://download.example/mod.zip", uri.ToString());
+    }
+
+    [Fact]
+    public async Task NexusClient_ValidatesApiKeyThroughOfficialValidateEndpoint()
+    {
+        using var handler = new StubHandler("""{"name":"Tester","is_premium":true}""");
+        using var http = new HttpClient(handler);
+        var client = new NexusClient(http, "abc123");
+
+        var result = await client.ValidateApiKeyAsync(CancellationToken.None);
+
+        Assert.True(result.IsValid);
+        Assert.Equal("Tester", result.UserName);
+        Assert.Equal("https://api.nexusmods.com/v1/users/validate.json", handler.LastRequestUri?.ToString());
+    }
+
+    [Fact]
+    public async Task NexusClient_ReturnsInvalidValidationResultForUnauthorizedKey()
+    {
+        using var http = new HttpClient(new StatusStubHandler(HttpStatusCode.Unauthorized, """{"message":"Invalid API key"}"""));
+        var client = new NexusClient(http, "bad");
+
+        var result = await client.ValidateApiKeyAsync(CancellationToken.None);
+
+        Assert.False(result.IsValid);
+        Assert.Contains("401", result.Message);
+    }
+
+    [Fact]
+    public void ReadyOrNotInstallDetector_FindsGameInSteamLibraryFolders()
+    {
+        var root = CreateTempDirectory();
+        var steam = Path.Combine(root, "Steam");
+        var library = Path.Combine(root, "Library");
+        var game = Path.Combine(library, "steamapps", "common", "Ready Or Not");
+        Directory.CreateDirectory(Path.Combine(steam, "steamapps"));
+        Directory.CreateDirectory(Path.Combine(game, "ReadyOrNot", "Content", "Paks"));
+        File.WriteAllText(Path.Combine(steam, "steamapps", "libraryfolders.vdf"), $$"""
+            "libraryfolders"
+            {
+                "0" { "path" "{{steam.Replace("\\", "\\\\")}}" }
+                "1" { "path" "{{library.Replace("\\", "\\\\")}}" }
+            }
+            """);
+
+        var result = ReadyOrNotInstallDetector.FindInstallDirectory([steam]);
+
+        Assert.Equal(game, result);
+    }
+
+    [Fact]
+    public void DashboardSummaryFactory_CountsInstalledPendingAndRecentActivity()
+    {
+        var manifest = new InstallManifest
+        {
+            Records =
+            [
+                new InstalledModRecord { ModName = "Installed A", InstalledAtUtc = new DateTimeOffset(2026, 6, 27, 12, 0, 0, TimeSpan.Zero) },
+                new InstalledModRecord { ModName = "Installed B", InstalledAtUtc = new DateTimeOffset(2026, 6, 27, 12, 10, 0, TimeSpan.Zero) }
+            ]
+        };
+        var queue = new[]
+        {
+            new ModQueueItem { ModName = "Queued", Status = "Queued" },
+            new ModQueueItem { ModName = "Done", Status = "Deployed" }
+        };
+        var log = new ErrorLog
+        {
+            Entries =
+            [
+                new ErrorLogEntry { Operation = "Download", ModName = "Broken", TimestampUtc = new DateTimeOffset(2026, 6, 27, 12, 20, 0, TimeSpan.Zero) }
+            ]
+        };
+
+        var summary = DashboardSummaryFactory.Create(manifest, queue, log);
+
+        Assert.Equal(2, summary.InstalledModCount);
+        Assert.Equal(1, summary.PendingQueueCount);
+        Assert.Equal("Download failed for Broken", summary.RecentActivity[0].Text);
+        Assert.Equal("Installed B deployed", summary.RecentActivity[1].Text);
     }
 
     [Fact]
@@ -528,6 +640,17 @@ public sealed class CoreBehaviorTests
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new ByteArrayContent(responseBody)
+            });
+        }
+    }
+
+    private sealed class StatusStubHandler(HttpStatusCode statusCode, string responseBody) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new HttpResponseMessage(statusCode)
+            {
+                Content = new StringContent(responseBody)
             });
         }
     }

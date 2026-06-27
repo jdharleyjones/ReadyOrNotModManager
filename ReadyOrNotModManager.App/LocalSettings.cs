@@ -14,6 +14,8 @@ public sealed class LocalSettings
     public string ProfileLibraryDirectory { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Documents", "ReadyOrNotModpacks");
     public string ActiveProfileId { get; set; } = string.Empty;
     public bool AdvancedOptionsEnabled { get; set; }
+    public bool SetupCompleted { get; set; }
+    public bool ForceSetupWizard { get; set; }
 }
 
 public sealed class LocalSettingsStore
@@ -43,7 +45,9 @@ public sealed class LocalSettingsStore
             ImportDirectory = string.IsNullOrWhiteSpace(dto.ImportDirectory) ? defaults.ImportDirectory : dto.ImportDirectory,
             ProfileLibraryDirectory = string.IsNullOrWhiteSpace(dto.ProfileLibraryDirectory) ? defaults.ProfileLibraryDirectory : dto.ProfileLibraryDirectory,
             ActiveProfileId = dto.ActiveProfileId ?? string.Empty,
-            AdvancedOptionsEnabled = dto.AdvancedOptionsEnabled
+            AdvancedOptionsEnabled = dto.AdvancedOptionsEnabled,
+            SetupCompleted = dto.SetupCompleted,
+            ForceSetupWizard = dto.ForceSetupWizard
         };
     }
 
@@ -57,7 +61,9 @@ public sealed class LocalSettingsStore
             ImportDirectory = settings.ImportDirectory,
             ProfileLibraryDirectory = settings.ProfileLibraryDirectory,
             ActiveProfileId = settings.ActiveProfileId,
-            AdvancedOptionsEnabled = settings.AdvancedOptionsEnabled
+            AdvancedOptionsEnabled = settings.AdvancedOptionsEnabled,
+            SetupCompleted = settings.SetupCompleted,
+            ForceSetupWizard = settings.ForceSetupWizard
         };
         File.WriteAllText(_path, JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true }));
     }
@@ -112,5 +118,7 @@ public sealed class LocalSettingsStore
         public string? ProfileLibraryDirectory { get; set; }
         public string? ActiveProfileId { get; set; }
         public bool AdvancedOptionsEnabled { get; set; }
+        public bool SetupCompleted { get; set; }
+        public bool ForceSetupWizard { get; set; }
     }
 }

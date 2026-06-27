@@ -1,5 +1,15 @@
 # Release Notes
 
+## 1.2.0
+
+- Replace the setup-heavy sidebar with a first-time setup wizard and a professional navigation shell.
+- Add Dashboard, Mods, Queue, Modpacks, Downloads, Settings, and Logs/Errors pages.
+- Add visual setup validation, Nexus API key testing, and Ready or Not Steam folder auto-detection.
+- Move API key and folder configuration into Settings, with a Reset setup wizard option.
+- Add dashboard summary cards for game status, Nexus status, installed mod count, pending queue count, and recent activity.
+- Add bundled WPF icons through MahApps.Metro.IconPacks so the app works offline after install.
+- Add subtle page transition and button hover styling.
+
 ## 1.1.0
 
 - Add an Advanced options toggle for choosing which `.pak` groups deploy when an archive contains multiple variants.

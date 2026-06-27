@@ -14,3 +14,5 @@ public sealed record NexusModFile(
     string SourceUrl);
 
 public sealed record DownloadLink(Uri Uri);
+
+public sealed record NexusApiValidationResult(bool IsValid, string UserName, bool IsPremium, string Message);
