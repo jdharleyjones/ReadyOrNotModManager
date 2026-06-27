@@ -1,0 +1,68 @@
+<Window x:Class="ReadyOrNotModManager.App.ArchiveSelectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Choose files to deploy" Height="460" Width="720"
+        WindowStartupLocation="CenterOwner"
+        Background="#111512">
+    <Window.Resources>
+        <SolidColorBrush x:Key="PanelBrush" Color="#1B211D"/>
+        <SolidColorBrush x:Key="LineBrush" Color="#344037"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#E6ECE4"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#A8B2A8"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#D7C35C"/>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Margin" Value="0,4,8,4"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="Background" Value="#2B342D"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="{StaticResource PanelBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="RowBackground" Value="#171C18"/>
+            <Setter Property="AlternatingRowBackground" Value="#1D241F"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#2F3932"/>
+            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,12">
+            <TextBlock Text="Choose deployable files" FontSize="22" FontWeight="SemiBold"/>
+            <TextBlock Text="Each row deploys the .pak file and its matching .ucas, .utoc, and .sig files." Foreground="{StaticResource MutedBrush}"/>
+        </StackPanel>
+
+        <DataGrid x:Name="GroupsGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" AlternationCount="2">
+            <DataGrid.Columns>
+                <DataGridCheckBoxColumn Header="Deploy" Binding="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="80"/>
+                <DataGridTextColumn Header="Group" Binding="{Binding DisplayName}" IsReadOnly="True" Width="180"/>
+                <DataGridTextColumn Header="Files" Binding="{Binding FilesDisplay}" IsReadOnly="True" Width="*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <DockPanel Grid.Row="2" Margin="0,14,0,0">
+            <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+                <Button Content="Select all" Click="SelectAll_Click"/>
+                <Button Content="Select none" Click="SelectNone_Click"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Click="Cancel_Click"/>
+                <Button Content="Deploy selected" Click="DeploySelected_Click" Background="#3A3F28" BorderBrush="{StaticResource AccentBrush}"/>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</Window>

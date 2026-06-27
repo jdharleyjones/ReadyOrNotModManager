@@ -7,7 +7,10 @@ public sealed record DeploymentRequest(
     string ModName,
     string SourceUrl,
     string ArchivePath,
-    string ReadyOrNotInstallDirectory);
+    string ReadyOrNotInstallDirectory,
+    string ProfileId = "",
+    IReadOnlyCollection<string>? SelectedArchiveEntries = null,
+    IProgress<double>? Progress = null);
 
 public sealed class DeploymentManager(InstallManifestStore manifestStore)
 {
@@ -19,22 +22,37 @@ public sealed class DeploymentManager(InstallManifestStore manifestStore)
             throw new DirectoryNotFoundException($"Ready or Not Paks folder was not found at {paksDirectory}.");
         }
 
-        var deployedFiles = ArchiveScanner.ExtractDeployableFiles(request.ArchivePath, paksDirectory);
+        var manifest = manifestStore.Load();
+        foreach (var existing in manifest.Records
+            .Where(existing =>
+                existing.SourceUrl.Equals(request.SourceUrl, StringComparison.OrdinalIgnoreCase) &&
+                existing.ProfileId.Equals(request.ProfileId, StringComparison.OrdinalIgnoreCase))
+            .ToArray())
+        {
+            DeleteDeployedFiles(existing);
+            manifest.Records.Remove(existing);
+        }
+
+        var deployedFiles = ArchiveScanner.ExtractDeployableFiles(
+            request.ArchivePath,
+            paksDirectory,
+            request.SelectedArchiveEntries,
+            request.Progress);
         if (deployedFiles.Count == 0)
         {
             throw new InvalidOperationException("The selected archive does not contain Ready or Not mod files.");
         }
 
-        var manifest = manifestStore.Load();
         var record = new InstalledModRecord
         {
             ModName = request.ModName,
             SourceUrl = request.SourceUrl,
             ArchivePath = request.ArchivePath,
+            ProfileId = request.ProfileId,
             InstalledAtUtc = DateTimeOffset.UtcNow,
+            SelectedArchiveEntries = request.SelectedArchiveEntries?.ToList() ?? [],
             DeployedFiles = deployedFiles.ToList()
         };
-        manifest.Records.RemoveAll(existing => existing.SourceUrl.Equals(request.SourceUrl, StringComparison.OrdinalIgnoreCase));
         manifest.Records.Add(record);
         manifestStore.Save(manifest);
         return record;
@@ -49,6 +67,34 @@ public sealed class DeploymentManager(InstallManifestStore manifestStore)
             return;
         }
 
+        DeleteDeployedFiles(record);
+        manifest.Records.Remove(record);
+        manifestStore.Save(manifest);
+    }
+
+    public void UninstallProfile(string profileId)
+    {
+        if (string.IsNullOrWhiteSpace(profileId))
+        {
+            return;
+        }
+
+        var manifest = manifestStore.Load();
+        var records = manifest.Records
+            .Where(item => item.ProfileId.Equals(profileId, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        foreach (var record in records)
+        {
+            DeleteDeployedFiles(record);
+            manifest.Records.Remove(record);
+        }
+
+        manifestStore.Save(manifest);
+    }
+
+    private static void DeleteDeployedFiles(InstalledModRecord record)
+    {
         foreach (var file in record.DeployedFiles)
         {
             if (File.Exists(file))
@@ -56,9 +102,6 @@ public sealed class DeploymentManager(InstallManifestStore manifestStore)
                 File.Delete(file);
             }
         }
-
-        manifest.Records.Remove(record);
-        manifestStore.Save(manifest);
     }
 }
 

@@ -5,6 +5,8 @@ using ReadyOrNotModManager.Core.Deployment;
 using ReadyOrNotModManager.Core.Manifest;
 using ReadyOrNotModManager.Core.Nexus;
 using ReadyOrNotModManager.Core.Downloads;
+using ReadyOrNotModManager.Core.Diagnostics;
+using ReadyOrNotModManager.Core.Profiles;
 using ReadyOrNotModManager.App;
 using SharpCompress.Common;
 using SharpCompress.Common.Options;
@@ -114,6 +116,41 @@ public sealed class CoreBehaviorTests
     }
 
     [Fact]
+    public void ArchiveScanner_GroupsRelatedUnrealFilesByPakBaseName()
+    {
+        var archivePath = CreateZip(
+            ("mods/Alpha.pak", "alpha pak"),
+            ("mods/Alpha.ucas", "alpha ucas"),
+            ("mods/Alpha.utoc", "alpha utoc"),
+            ("mods/Beta.pak", "beta pak"),
+            ("mods/Beta.sig", "beta sig"),
+            ("readme.txt", "ignore"));
+
+        var groups = ArchiveScanner.GetDeployableGroups(archivePath);
+
+        Assert.Equal(["Alpha", "Beta"], groups.Select(group => group.DisplayName).ToArray());
+        Assert.Equal(["mods/Alpha.pak", "mods/Alpha.ucas", "mods/Alpha.utoc"], groups[0].Files.Select(file => file.EntryPath).ToArray());
+        Assert.Equal(["mods/Beta.pak", "mods/Beta.sig"], groups[1].Files.Select(file => file.EntryPath).ToArray());
+    }
+
+    [Fact]
+    public void ArchiveScanner_ExtractsOnlySelectedDeployableEntries()
+    {
+        var archivePath = CreateZip(
+            ("mods/Alpha.pak", "alpha pak"),
+            ("mods/Alpha.ucas", "alpha ucas"),
+            ("mods/Beta.pak", "beta pak"));
+        var destination = CreateTempDirectory();
+
+        var deployed = ArchiveScanner.ExtractDeployableFiles(archivePath, destination, ["mods/Alpha.pak", "mods/Alpha.ucas"]);
+
+        Assert.Equal(2, deployed.Count);
+        Assert.True(File.Exists(Path.Combine(destination, "Alpha.pak")));
+        Assert.True(File.Exists(Path.Combine(destination, "Alpha.ucas")));
+        Assert.False(File.Exists(Path.Combine(destination, "Beta.pak")));
+    }
+
+    [Fact]
     public async Task DownloadManager_RenamesArchiveToDetectedFormat()
     {
         var directory = CreateTempDirectory();
@@ -154,6 +191,34 @@ public sealed class CoreBehaviorTests
         Assert.Single(loaded.Records);
         Assert.Equal("Test Mod", loaded.Records[0].ModName);
         Assert.Equal("C:\\Game\\ReadyOrNot\\Content\\Paks\\Test.pak", loaded.Records[0].DeployedFiles[0]);
+    }
+
+    [Fact]
+    public void InstallManifestStore_LoadsOldManifestWithoutProfileFields()
+    {
+        var directory = CreateTempDirectory();
+        var path = Path.Combine(directory, "manifest.json");
+        File.WriteAllText(path, """
+            {
+              "Records": [
+                {
+                  "InstallId": "old",
+                  "ModName": "Old Mod",
+                  "SourceUrl": "https://example/mod",
+                  "ArchivePath": "C:\\Mods\\old.zip",
+                  "InstalledAtUtc": "2026-06-27T12:00:00+00:00",
+                  "DeployedFiles": ["C:\\Game\\Old.pak"]
+                }
+              ]
+            }
+            """);
+
+        var loaded = new InstallManifestStore(path).Load();
+
+        var record = Assert.Single(loaded.Records);
+        Assert.Equal("old", record.InstallId);
+        Assert.Empty(record.ProfileId);
+        Assert.Empty(record.SelectedArchiveEntries);
     }
 
     [Fact]
@@ -202,6 +267,105 @@ public sealed class CoreBehaviorTests
 
         Assert.All(record.DeployedFiles, path => Assert.False(File.Exists(path)));
         Assert.Empty(store.Load().Records);
+    }
+
+    [Fact]
+    public void DeploymentManager_UninstallsAllRecordsForProfile()
+    {
+        var root = CreateTempDirectory();
+        var game = Path.Combine(root, "ReadyOrNot");
+        var paks = Path.Combine(game, "ReadyOrNot", "Content", "Paks");
+        Directory.CreateDirectory(paks);
+        var archive = CreateZip(("nested/ProfileMod.pak", "pak"));
+        var store = new InstallManifestStore(Path.Combine(root, "manifest.json"));
+        var manager = new DeploymentManager(store);
+
+        var first = manager.Deploy(new DeploymentRequest("Profile Mod", "https://example/1", archive, game, ProfileId: "profile-a"));
+        var second = manager.Deploy(new DeploymentRequest("Other Mod", "https://example/2", archive, game, ProfileId: "profile-b"));
+
+        manager.UninstallProfile("profile-a");
+
+        Assert.All(first.DeployedFiles, path => Assert.False(File.Exists(path)));
+        Assert.All(second.DeployedFiles, path => Assert.True(File.Exists(path)));
+        Assert.Equal("profile-b", Assert.Single(store.Load().Records).ProfileId);
+    }
+
+    [Fact]
+    public void DeploymentManager_RedeployDeletesPreviousFilesForSameProfileItem()
+    {
+        var root = CreateTempDirectory();
+        var game = Path.Combine(root, "ReadyOrNot");
+        var paks = Path.Combine(game, "ReadyOrNot", "Content", "Paks");
+        Directory.CreateDirectory(paks);
+        var archive = CreateZip(("nested/ProfileMod.pak", "pak"));
+        var store = new InstallManifestStore(Path.Combine(root, "manifest.json"));
+        var manager = new DeploymentManager(store);
+
+        var first = manager.Deploy(new DeploymentRequest("Profile Mod", "https://example/1", archive, game, ProfileId: "profile-a"));
+        var second = manager.Deploy(new DeploymentRequest("Profile Mod", "https://example/1", archive, game, ProfileId: "profile-a"));
+
+        Assert.All(second.DeployedFiles, path => Assert.True(File.Exists(path)));
+        Assert.DoesNotContain(second.DeployedFiles, path => Path.GetFileNameWithoutExtension(path).EndsWith("-1", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(first.DeployedFiles, second.DeployedFiles);
+        Assert.Single(store.Load().Records);
+    }
+
+    [Fact]
+    public void ModProfileStore_SavesProfileAndCopiesArchivesIntoLibrary()
+    {
+        var root = CreateTempDirectory();
+        var archive = CreateZip(("nested/ProfileMod.pak", "pak"));
+        var store = new ModProfileStore(root);
+        var profile = new ModProfile
+        {
+            Name = "SWAT Essentials",
+            Items =
+            [
+                new ModProfileItem
+                {
+                    ModId = 10,
+                    FileId = 20,
+                    ModName = "Profile Mod",
+                    Version = "1.0",
+                    SourceUrl = "https://example/mod",
+                    ArchivePath = archive,
+                    SelectedArchiveEntries = ["nested/ProfileMod.pak"],
+                    LastInstallId = "install-a"
+                }
+            ]
+        };
+
+        var saved = store.Save(profile, copyArchives: true);
+
+        Assert.True(File.Exists(Path.Combine(root, saved.ProfileId, "profile.json")));
+        Assert.Single(store.LoadAll());
+        Assert.NotEqual(archive, saved.Items[0].ArchivePath);
+        Assert.True(File.Exists(saved.Items[0].ArchivePath));
+        Assert.Contains(Path.Combine(root, saved.ProfileId, "archives"), saved.Items[0].ArchivePath);
+    }
+
+    [Fact]
+    public void ErrorLogStore_AppendsAndClearsEntries()
+    {
+        var path = Path.Combine(CreateTempDirectory(), "error-log.json");
+        var store = new ErrorLogStore(path);
+
+        store.Append(new ErrorLogEntry
+        {
+            Operation = "Download",
+            ModName = "Broken Mod",
+            SourceUrl = "https://example/mod",
+            Message = "Download failed",
+            Detail = "stack"
+        });
+
+        var entry = Assert.Single(store.Load().Entries);
+        Assert.Equal("Download", entry.Operation);
+        Assert.Equal("Broken Mod", entry.ModName);
+
+        store.Clear();
+
+        Assert.Empty(store.Load().Entries);
     }
 
     [Fact]

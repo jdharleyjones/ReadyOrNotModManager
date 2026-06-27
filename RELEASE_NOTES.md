@@ -1,5 +1,15 @@
 # Release Notes
 
+## 1.1.0
+
+- Add an Advanced options toggle for choosing which `.pak` groups deploy when an archive contains multiple variants.
+- Add local Modpacks profiles for saving, loading, updating, deleting, and activating switchable mod setups.
+- Add a separate modpack library folder setting for copied profile archives and profile metadata.
+- Add overall progress reporting for download and deployment passes.
+- Add persistent error logging with an Errors window for failed downloads/deployments and manual-fix helper actions.
+- Continue queue operations after per-item download or deployment failures.
+- Track profile IDs and selected archive entries in the install manifest.
+
 ## 1.0.1
 
 - Fix deployment for 7z archives by using SharpCompress archive handling instead of reader-only handling.

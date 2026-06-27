@@ -1,0 +1,71 @@
+<Window x:Class="ReadyOrNotModManager.App.ErrorsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Errors" Height="560" Width="980"
+        WindowStartupLocation="CenterOwner"
+        Background="#111512">
+    <Window.Resources>
+        <SolidColorBrush x:Key="PanelBrush" Color="#1B211D"/>
+        <SolidColorBrush x:Key="LineBrush" Color="#344037"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#E6ECE4"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#A8B2A8"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#D7C35C"/>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Margin" Value="0,4,8,4"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="Background" Value="#2B342D"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="{StaticResource PanelBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="RowBackground" Value="#171C18"/>
+            <Setter Property="AlternatingRowBackground" Value="#1D241F"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#2F3932"/>
+            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,12">
+            <TextBlock Text="Errors" FontSize="24" FontWeight="SemiBold"/>
+            <TextBlock Text="Failed downloads and deployments are listed here so the rest of the queue can keep running." Foreground="{StaticResource MutedBrush}"/>
+        </StackPanel>
+
+        <DataGrid x:Name="ErrorsGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" SelectionMode="Single" AlternationCount="2">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Time" Binding="{Binding TimestampUtc, StringFormat={}{0:g}}" Width="150"/>
+                <DataGridTextColumn Header="Operation" Binding="{Binding Operation}" Width="110"/>
+                <DataGridTextColumn Header="Mod" Binding="{Binding ModName}" Width="220"/>
+                <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="2*"/>
+                <DataGridTextColumn Header="Archive" Binding="{Binding ArchivePath}" Width="2*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <DockPanel Grid.Row="2" Margin="0,14,0,0">
+            <WrapPanel DockPanel.Dock="Left">
+                <Button Content="Open Nexus page" Click="OpenNexus_Click"/>
+                <Button Content="Open game folder" Click="OpenGameFolder_Click"/>
+                <Button Content="Open archive folder" Click="OpenArchiveFolder_Click"/>
+                <Button Content="Copy manual fix note" Click="CopyManualFix_Click"/>
+            </WrapPanel>
+            <WrapPanel HorizontalAlignment="Right">
+                <Button Content="Clear errors" Click="ClearErrors_Click"/>
+            </WrapPanel>
+        </DockPanel>
+    </Grid>
+</Window>

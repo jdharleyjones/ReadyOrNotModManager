@@ -13,7 +13,9 @@ public sealed class InstalledModRecord
     public string ModName { get; set; } = string.Empty;
     public string SourceUrl { get; set; } = string.Empty;
     public string ArchivePath { get; set; } = string.Empty;
+    public string ProfileId { get; set; } = string.Empty;
     public DateTimeOffset InstalledAtUtc { get; set; } = DateTimeOffset.UtcNow;
+    public List<string> SelectedArchiveEntries { get; set; } = [];
     public List<string> DeployedFiles { get; set; } = [];
 }
 

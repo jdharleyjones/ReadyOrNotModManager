@@ -5,6 +5,8 @@ namespace ReadyOrNotModManager.Core.Archives;
 
 public sealed record DeployableArchiveFile(string EntryPath, string FileName);
 
+public sealed record DeployableArchiveGroup(string DisplayName, IReadOnlyList<DeployableArchiveFile> Files);
+
 public static class ArchiveScanner
 {
     private static readonly HashSet<string> DeployableExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -35,30 +37,64 @@ public static class ArchiveScanner
         return files;
     }
 
-    public static IReadOnlyList<string> ExtractDeployableFiles(string archivePath, string destinationDirectory)
+    public static IReadOnlyList<DeployableArchiveGroup> GetDeployableGroups(string archivePath)
+    {
+        var files = FindDeployableFiles(archivePath);
+        var pakStems = files
+            .Where(file => Path.GetExtension(file.FileName).Equals(".pak", StringComparison.OrdinalIgnoreCase))
+            .Select(file => Path.GetFileNameWithoutExtension(file.FileName))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Order(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return pakStems
+            .Select(stem => new DeployableArchiveGroup(
+                stem,
+                files
+                    .Where(file => Path.GetFileNameWithoutExtension(file.FileName).Equals(stem, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(file => GetDeployableOrder(Path.GetExtension(file.FileName)))
+                    .ThenBy(file => file.EntryPath, StringComparer.OrdinalIgnoreCase)
+                    .ToArray()))
+            .ToArray();
+    }
+
+    public static IReadOnlyList<string> ExtractDeployableFiles(
+        string archivePath,
+        string destinationDirectory,
+        IReadOnlyCollection<string>? selectedEntryPaths = null,
+        IProgress<double>? progress = null)
     {
         Directory.CreateDirectory(destinationDirectory);
         ArchiveFormatDetector.Detect(archivePath);
         using var archive = OpenSupportedArchive(archivePath);
         var deployed = new List<string>();
-
-        foreach (var entry in archive.Entries)
-        {
-            var key = entry.Key;
-            if (entry.IsDirectory ||
-                string.IsNullOrWhiteSpace(key) ||
-                !DeployableExtensions.Contains(Path.GetExtension(key)))
+        var selected = selectedEntryPaths is null
+            ? null
+            : new HashSet<string>(selectedEntryPaths.Select(NormalizeEntryPath), StringComparer.OrdinalIgnoreCase);
+        var entries = archive.Entries
+            .Where(entry =>
             {
-                continue;
-            }
+                var key = entry.Key;
+                return !entry.IsDirectory &&
+                    !string.IsNullOrWhiteSpace(key) &&
+                    DeployableExtensions.Contains(Path.GetExtension(key)) &&
+                    (selected is null || selected.Contains(NormalizeEntryPath(key)));
+            })
+            .ToArray();
 
-            var destination = GetUniqueDestination(destinationDirectory, Path.GetFileName(key));
+        for (var index = 0; index < entries.Length; index++)
+        {
+            var entry = entries[index];
+            var key = entry.Key;
+            var destination = GetUniqueDestination(destinationDirectory, Path.GetFileName(key!));
             using var input = entry.OpenEntryStream();
             using var output = File.Create(destination);
             input.CopyTo(output);
             deployed.Add(destination);
+            progress?.Report((index + 1) / (double)entries.Length);
         }
 
+        progress?.Report(1);
         return deployed;
     }
 
@@ -94,5 +130,22 @@ public static class ArchiveScanner
                 return destination;
             }
         }
+    }
+
+    private static int GetDeployableOrder(string extension)
+    {
+        return extension.ToLowerInvariant() switch
+        {
+            ".pak" => 0,
+            ".ucas" => 1,
+            ".utoc" => 2,
+            ".sig" => 3,
+            _ => 4
+        };
+    }
+
+    private static string NormalizeEntryPath(string entryPath)
+    {
+        return entryPath.Replace('\\', '/');
     }
 }

@@ -3,10 +3,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Windows;
+using ReadyOrNotModManager.Core.Archives;
 using ReadyOrNotModManager.Core.Deployment;
+using ReadyOrNotModManager.Core.Diagnostics;
 using ReadyOrNotModManager.Core.Downloads;
 using ReadyOrNotModManager.Core.Manifest;
 using ReadyOrNotModManager.Core.Nexus;
+using ReadyOrNotModManager.Core.Profiles;
 using Forms = System.Windows.Forms;
 
 namespace ReadyOrNotModManager.App;
@@ -35,6 +38,8 @@ public partial class MainWindow : Window
         DownloadDirectoryBox.Text = _settings.DownloadDirectory;
         GameDirectoryBox.Text = _settings.ReadyOrNotDirectory;
         ImportDirectoryBox.Text = _settings.ImportDirectory;
+        ProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
+        AdvancedOptionsBox.IsChecked = _settings.AdvancedOptionsEnabled;
     }
 
     private void SaveSettings_Click(object sender, RoutedEventArgs e)
@@ -85,6 +90,23 @@ public partial class MainWindow : Window
             ImportDirectoryBox.Text = selected;
             SaveSettings();
         }
+    }
+
+    private void BrowseProfileLibraryDirectory_Click(object sender, RoutedEventArgs e)
+    {
+        if (TryChooseFolder(ProfileLibraryDirectoryBox.Text, out var selected))
+        {
+            ProfileLibraryDirectoryBox.Text = selected;
+            SaveSettings();
+        }
+    }
+
+    private void OpenProfileLibraryDirectory_Click(object sender, RoutedEventArgs e)
+    {
+        SaveSettings();
+        Directory.CreateDirectory(_settings.ProfileLibraryDirectory);
+        OpenFolder(_settings.ProfileLibraryDirectory);
+        SetStatus("Opened modpack library folder.");
     }
 
     private async void AddUrl_Click(object sender, RoutedEventArgs e)
@@ -161,9 +183,14 @@ public partial class MainWindow : Window
             using var http = new HttpClient();
             var nexus = new NexusClient(http, _settings.ApiKey);
             var downloader = new DownloadManager(http);
+            var items = _queue.Where(item => string.IsNullOrWhiteSpace(item.ArchivePath)).ToArray();
+            var total = Math.Max(items.Length, 1);
 
-            foreach (var item in _queue.Where(item => string.IsNullOrWhiteSpace(item.ArchivePath)).ToArray())
+            for (var index = 0; index < items.Length; index++)
             {
+                var item = items[index];
+                var itemNumber = index + 1;
+                SetProgress(index / (double)total, $"Downloading {itemNumber} of {items.Length}");
                 if (item.FileId <= 0 || string.IsNullOrWhiteSpace(_settings.ApiKey))
                 {
                     item.Status = "Open Nexus page and import zip";
@@ -176,21 +203,25 @@ public partial class MainWindow : Window
                     item.Status = "Requesting download link";
                     var downloadUri = await nexus.GetDownloadLinkAsync("readyornot", item.ModId, item.FileId, CancellationToken.None);
                     item.Status = "Downloading";
+                    var fileProgress = new Progress<double>(value =>
+                        SetProgress((index + Math.Clamp(value, 0, 1)) / total, $"Downloading {itemNumber} of {items.Length}"));
                     item.ArchivePath = await downloader.DownloadAsync(
                         downloadUri,
                         _settings.DownloadDirectory,
                         BuildArchiveFileName(item),
-                        null,
+                        fileProgress,
                         CancellationToken.None);
                     item.Status = "Downloaded";
                 }
                 catch (Exception ex) when (ex is NexusApiException or HttpRequestException or InvalidDataException)
                 {
-                    item.Status = "Browser fallback required";
+                    item.Status = "Failed - see errors";
+                    LogItemError("Download", item, ex);
                     OpenUrl(item.SourceUrl);
                 }
             }
 
+            SetProgress(1, "Download pass complete");
             SetStatus("Download pass complete.");
         });
     }
@@ -270,7 +301,7 @@ public partial class MainWindow : Window
 
     private async void DeploySelected_Click(object sender, RoutedEventArgs e)
     {
-        await RunUiTaskAsync(() =>
+        await RunUiTaskAsync(async () =>
         {
             SaveSettings();
             if (!ReadyOrNotPaths.LooksLikeInstallDirectory(_settings.ReadyOrNotDirectory))
@@ -279,29 +310,49 @@ public partial class MainWindow : Window
             }
 
             var manager = CreateDeploymentManager();
-            foreach (var item in GetSelectedItems())
+            var items = GetSelectedItems().ToArray();
+            var total = Math.Max(items.Length, 1);
+            for (var index = 0; index < items.Length; index++)
             {
+                var item = items[index];
+                var itemNumber = index + 1;
+                SetProgress(index / (double)total, $"Deploying {itemNumber} of {items.Length}");
                 if (!File.Exists(item.ArchivePath))
                 {
                     item.Status = "Missing zip";
+                    LogItemError("Deploy", item, new FileNotFoundException("The downloaded archive could not be found.", item.ArchivePath));
                     continue;
                 }
 
                 try
                 {
-                    var record = manager.Deploy(new DeploymentRequest(item.ModName, item.SourceUrl, item.ArchivePath, _settings.ReadyOrNotDirectory));
+                    var selectedEntries = ResolveSelectedArchiveEntries(item);
+                    var deployProgress = new Progress<double>(value =>
+                        SetProgress((index + Math.Clamp(value, 0, 1)) / total, $"Deploying {itemNumber} of {items.Length}"));
+                    var record = manager.Deploy(new DeploymentRequest(
+                        item.ModName,
+                        item.SourceUrl,
+                        item.ArchivePath,
+                        _settings.ReadyOrNotDirectory,
+                        item.ProfileId,
+                        selectedEntries.Count == 0 ? null : selectedEntries,
+                        deployProgress));
                     item.InstallId = record.InstallId;
+                    item.SelectedArchiveEntries = record.SelectedArchiveEntries.ToList();
                     item.Status = "Deployed";
                 }
-                catch (InvalidDataException ex)
+                catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException or IOException or UnauthorizedAccessException)
                 {
-                    item.Status = "Import archive manually";
+                    item.Status = "Failed - see errors";
+                    LogItemError("Deploy", item, ex);
                     SetStatus(ex.Message);
                 }
+
+                await Task.Yield();
             }
 
+            SetProgress(1, "Deployment complete");
             SetStatus("Deployment complete.");
-            return Task.CompletedTask;
         });
     }
 
@@ -338,6 +389,30 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OpenProfiles_Click(object sender, RoutedEventArgs e)
+    {
+        SaveSettings();
+        Directory.CreateDirectory(_settings.ProfileLibraryDirectory);
+        var window = new ProfilesWindow(
+            CreateProfileStore(),
+            () => _queue.ToArray(),
+            LoadProfileIntoQueue,
+            ActivateProfileAsync)
+        {
+            Owner = this
+        };
+        window.ShowDialog();
+    }
+
+    private void OpenErrors_Click(object sender, RoutedEventArgs e)
+    {
+        var window = new ErrorsWindow(CreateErrorLogStore())
+        {
+            Owner = this
+        };
+        window.ShowDialog();
+    }
+
     private void ClearUserData_Click(object sender, RoutedEventArgs e)
     {
         var result = System.Windows.MessageBox.Show(
@@ -358,6 +433,7 @@ public partial class MainWindow : Window
         {
             File.Delete(manifestPath);
         }
+        CreateErrorLogStore().Clear();
 
         _queue.Clear();
         _settings = new LocalSettings();
@@ -365,18 +441,25 @@ public partial class MainWindow : Window
         DownloadDirectoryBox.Text = _settings.DownloadDirectory;
         GameDirectoryBox.Clear();
         ImportDirectoryBox.Text = _settings.ImportDirectory;
+        ProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
+        AdvancedOptionsBox.IsChecked = false;
         UrlBox.Clear();
+        SetProgress(0, string.Empty);
         SetStatus("User data cleared.");
     }
 
     private void SaveSettings()
     {
+        var defaults = new LocalSettings();
         _settings = new LocalSettings
         {
             ApiKey = ApiKeyBox.Password.Trim(),
-            DownloadDirectory = DownloadDirectoryBox.Text.Trim(),
+            DownloadDirectory = string.IsNullOrWhiteSpace(DownloadDirectoryBox.Text) ? defaults.DownloadDirectory : DownloadDirectoryBox.Text.Trim(),
             ReadyOrNotDirectory = GameDirectoryBox.Text.Trim(),
-            ImportDirectory = ImportDirectoryBox.Text.Trim()
+            ImportDirectory = string.IsNullOrWhiteSpace(ImportDirectoryBox.Text) ? defaults.ImportDirectory : ImportDirectoryBox.Text.Trim(),
+            ProfileLibraryDirectory = string.IsNullOrWhiteSpace(ProfileLibraryDirectoryBox.Text) ? defaults.ProfileLibraryDirectory : ProfileLibraryDirectoryBox.Text.Trim(),
+            ActiveProfileId = _settings.ActiveProfileId,
+            AdvancedOptionsEnabled = AdvancedOptionsBox.IsChecked == true
         };
         _settingsStore.Save(_settings);
     }
@@ -395,6 +478,7 @@ public partial class MainWindow : Window
             ModName = file.Name,
             Version = file.Version,
             SourceUrl = file.SourceUrl,
+            ProfileId = _settings.ActiveProfileId,
             Status = "Queued"
         });
     }
@@ -422,10 +506,143 @@ public partial class MainWindow : Window
             ModName = Path.GetFileNameWithoutExtension(archivePath),
             Version = "Manual",
             SourceUrl = string.Empty,
+            ProfileId = _settings.ActiveProfileId,
             Status = "Imported archive"
         };
         _queue.Add(item);
         return item;
+    }
+
+    private IReadOnlyList<string> ResolveSelectedArchiveEntries(ModQueueItem item)
+    {
+        if (item.SelectedArchiveEntries.Count > 0)
+        {
+            return item.SelectedArchiveEntries;
+        }
+
+        if (_settings.AdvancedOptionsEnabled)
+        {
+            var groups = ArchiveScanner.GetDeployableGroups(item.ArchivePath);
+            if (groups.Count > 1)
+            {
+                var dialog = new ArchiveSelectionWindow(groups)
+                {
+                    Owner = this
+                };
+                if (dialog.ShowDialog() == true)
+                {
+                    item.SelectedArchiveEntries = dialog.SelectedEntryPaths.ToList();
+                    return item.SelectedArchiveEntries;
+                }
+
+                throw new OperationCanceledException("Deployment was canceled.");
+            }
+        }
+
+        return [];
+    }
+
+    private void LoadProfileIntoQueue(ModProfile profile)
+    {
+        _queue.Clear();
+        foreach (var profileItem in profile.Items)
+        {
+            _queue.Add(CreateQueueItem(profile, profileItem));
+        }
+
+        SetStatus($"Loaded modpack: {profile.Name}");
+    }
+
+    private async Task ActivateProfileAsync(ModProfile profile)
+    {
+        SaveSettings();
+        if (!ReadyOrNotPaths.LooksLikeInstallDirectory(_settings.ReadyOrNotDirectory))
+        {
+            throw new DirectoryNotFoundException("Choose the Ready or Not install folder that contains ReadyOrNot\\Content\\Paks.");
+        }
+
+        var manager = CreateDeploymentManager();
+        if (!string.IsNullOrWhiteSpace(_settings.ActiveProfileId))
+        {
+            manager.UninstallProfile(_settings.ActiveProfileId);
+        }
+
+        LoadProfileIntoQueue(profile);
+        var total = Math.Max(_queue.Count, 1);
+        for (var index = 0; index < _queue.Count; index++)
+        {
+            var item = _queue[index];
+            SetProgress(index / (double)total, $"Activating {index + 1} of {_queue.Count}");
+            if (!File.Exists(item.ArchivePath))
+            {
+                item.Status = "Missing archive";
+                LogItemError("Activate profile", item, new FileNotFoundException("The profile archive could not be found.", item.ArchivePath));
+                continue;
+            }
+
+            try
+            {
+                var itemIndex = index;
+                var deployProgress = new Progress<double>(value =>
+                    SetProgress((itemIndex + Math.Clamp(value, 0, 1)) / total, $"Activating {itemIndex + 1} of {_queue.Count}"));
+                var record = manager.Deploy(new DeploymentRequest(
+                    item.ModName,
+                    item.SourceUrl,
+                    item.ArchivePath,
+                    _settings.ReadyOrNotDirectory,
+                    profile.ProfileId,
+                    item.SelectedArchiveEntries.Count == 0 ? null : item.SelectedArchiveEntries,
+                    deployProgress));
+                item.InstallId = record.InstallId;
+                item.Status = "Deployed";
+            }
+            catch (Exception ex) when (ex is InvalidDataException or InvalidOperationException or IOException or UnauthorizedAccessException)
+            {
+                item.Status = "Failed - see errors";
+                LogItemError("Activate profile", item, ex);
+            }
+
+            await Task.Yield();
+        }
+
+        _settings.ActiveProfileId = profile.ProfileId;
+        SaveSettings();
+        CreateProfileStore().Save(CreateProfileFromQueue(profile), copyArchives: false);
+        SetProgress(1, "Profile activated");
+        SetStatus($"Activated modpack: {profile.Name}");
+    }
+
+    private ModProfile CreateProfileFromQueue(ModProfile profile)
+    {
+        profile.Items = _queue.Select(item => new ModProfileItem
+        {
+            ModId = item.ModId,
+            FileId = item.FileId,
+            ModName = item.ModName,
+            Version = item.Version,
+            SourceUrl = item.SourceUrl,
+            ArchivePath = item.ArchivePath,
+            SelectedArchiveEntries = item.SelectedArchiveEntries.ToList(),
+            LastInstallId = item.InstallId
+        }).ToList();
+        return profile;
+    }
+
+    private static ModQueueItem CreateQueueItem(ModProfile profile, ModProfileItem profileItem)
+    {
+        return new ModQueueItem
+        {
+            ModId = profileItem.ModId,
+            FileId = profileItem.FileId,
+            ModName = profileItem.ModName,
+            Version = profileItem.Version,
+            SourceUrl = profileItem.SourceUrl,
+            ArchivePath = profileItem.ArchivePath,
+            InstallId = profileItem.LastInstallId,
+            ProfileId = profile.ProfileId,
+            SelectedArchiveEntries = profileItem.SelectedArchiveEntries.ToList(),
+            Status = File.Exists(profileItem.ArchivePath) ? "Loaded from profile" : "Missing archive"
+        };
     }
 
     private DeploymentManager CreateDeploymentManager()
@@ -436,6 +653,16 @@ public partial class MainWindow : Window
     private InstallManifestStore CreateManifestStore()
     {
         return new InstallManifestStore(Path.Combine(_appDataDirectory, "install-manifest.json"));
+    }
+
+    private ErrorLogStore CreateErrorLogStore()
+    {
+        return new ErrorLogStore(Path.Combine(_appDataDirectory, "error-log.json"));
+    }
+
+    private ModProfileStore CreateProfileStore()
+    {
+        return new ModProfileStore(_settings.ProfileLibraryDirectory);
     }
 
     private static bool TryChooseFolder(string currentPath, out string selectedPath)
@@ -479,6 +706,7 @@ public partial class MainWindow : Window
         {
             IsEnabled = false;
             SetStatus("Working...");
+            SetProgress(0, string.Empty);
             await action();
         }
         catch (Exception ex)
@@ -495,5 +723,27 @@ public partial class MainWindow : Window
     private void SetStatus(string message)
     {
         StatusText.Text = message;
+    }
+
+    private void SetProgress(double value, string message)
+    {
+        OverallProgressBar.Value = Math.Clamp(value, 0, 1) * 100;
+        ProgressText.Text = message;
+    }
+
+    private void LogItemError(string operation, ModQueueItem item, Exception exception)
+    {
+        CreateErrorLogStore().Append(new ErrorLogEntry
+        {
+            Operation = operation,
+            ModName = item.ModName,
+            ModId = item.ModId,
+            FileId = item.FileId,
+            SourceUrl = item.SourceUrl,
+            ArchivePath = item.ArchivePath,
+            ReadyOrNotDirectory = _settings.ReadyOrNotDirectory,
+            Message = exception.Message,
+            Detail = exception.ToString()
+        });
     }
 }

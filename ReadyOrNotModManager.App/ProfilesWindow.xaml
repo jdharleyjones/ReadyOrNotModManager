@@ -1,0 +1,80 @@
+<Window x:Class="ReadyOrNotModManager.App.ProfilesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Modpacks" Height="560" Width="860"
+        WindowStartupLocation="CenterOwner"
+        Background="#111512">
+    <Window.Resources>
+        <SolidColorBrush x:Key="PanelBrush" Color="#1B211D"/>
+        <SolidColorBrush x:Key="LineBrush" Color="#344037"/>
+        <SolidColorBrush x:Key="TextBrush" Color="#E6ECE4"/>
+        <SolidColorBrush x:Key="MutedBrush" Color="#A8B2A8"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#D7C35C"/>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Margin" Value="0,6,8,8"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Background" Value="#101410"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+            <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
+        </Style>
+        <Style TargetType="Button">
+            <Setter Property="MinHeight" Value="34"/>
+            <Setter Property="Margin" Value="0,4,8,4"/>
+            <Setter Property="Padding" Value="14,7"/>
+            <Setter Property="Background" Value="#2B342D"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="{StaticResource PanelBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="RowBackground" Value="#171C18"/>
+            <Setter Property="AlternatingRowBackground" Value="#1D241F"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#2F3932"/>
+            <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="0,0,0,12">
+            <TextBlock Text="Modpacks" FontSize="24" FontWeight="SemiBold"/>
+            <TextBlock Text="Save the current queue as a switchable Ready or Not setup." Foreground="{StaticResource MutedBrush}"/>
+        </StackPanel>
+
+        <DataGrid x:Name="ProfilesGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" SelectionMode="Single" AlternationCount="2">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                <DataGridTextColumn Header="Mods" Binding="{Binding Items.Count}" Width="80"/>
+                <DataGridTextColumn Header="Updated" Binding="{Binding UpdatedAtUtc, StringFormat={}{0:g}}" Width="180"/>
+                <DataGridTextColumn Header="Profile ID" Binding="{Binding ProfileId}" Width="2*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <DockPanel Grid.Row="2" Margin="0,14,0,0">
+            <StackPanel DockPanel.Dock="Left" Width="300">
+                <TextBlock Text="Profile name" FontWeight="SemiBold"/>
+                <TextBox x:Name="ProfileNameBox"/>
+            </StackPanel>
+            <WrapPanel HorizontalAlignment="Right">
+                <Button Content="Save current as new" Click="SaveNew_Click" Background="#3A3F28" BorderBrush="{StaticResource AccentBrush}"/>
+                <Button Content="Update selected" Click="UpdateSelected_Click"/>
+                <Button Content="Load selected" Click="LoadSelected_Click"/>
+                <Button Content="Activate selected" Click="ActivateSelected_Click"/>
+                <Button Content="Delete selected" Click="DeleteSelected_Click"/>
+            </WrapPanel>
+        </DockPanel>
+    </Grid>
+</Window>

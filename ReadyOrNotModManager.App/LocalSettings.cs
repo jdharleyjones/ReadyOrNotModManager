@@ -11,6 +11,9 @@ public sealed class LocalSettings
     public string DownloadDirectory { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads", "ReadyOrNotMods");
     public string ReadyOrNotDirectory { get; set; } = string.Empty;
     public string ImportDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+    public string ProfileLibraryDirectory { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Documents", "ReadyOrNotModpacks");
+    public string ActiveProfileId { get; set; } = string.Empty;
+    public bool AdvancedOptionsEnabled { get; set; }
 }
 
 public sealed class LocalSettingsStore
@@ -37,7 +40,10 @@ public sealed class LocalSettingsStore
             ApiKey = Unprotect(dto.ProtectedApiKey),
             DownloadDirectory = string.IsNullOrWhiteSpace(dto.DownloadDirectory) ? defaults.DownloadDirectory : dto.DownloadDirectory,
             ReadyOrNotDirectory = dto.ReadyOrNotDirectory ?? string.Empty,
-            ImportDirectory = string.IsNullOrWhiteSpace(dto.ImportDirectory) ? defaults.ImportDirectory : dto.ImportDirectory
+            ImportDirectory = string.IsNullOrWhiteSpace(dto.ImportDirectory) ? defaults.ImportDirectory : dto.ImportDirectory,
+            ProfileLibraryDirectory = string.IsNullOrWhiteSpace(dto.ProfileLibraryDirectory) ? defaults.ProfileLibraryDirectory : dto.ProfileLibraryDirectory,
+            ActiveProfileId = dto.ActiveProfileId ?? string.Empty,
+            AdvancedOptionsEnabled = dto.AdvancedOptionsEnabled
         };
     }
 
@@ -48,7 +54,10 @@ public sealed class LocalSettingsStore
             ProtectedApiKey = Protect(settings.ApiKey),
             DownloadDirectory = settings.DownloadDirectory,
             ReadyOrNotDirectory = settings.ReadyOrNotDirectory,
-            ImportDirectory = settings.ImportDirectory
+            ImportDirectory = settings.ImportDirectory,
+            ProfileLibraryDirectory = settings.ProfileLibraryDirectory,
+            ActiveProfileId = settings.ActiveProfileId,
+            AdvancedOptionsEnabled = settings.AdvancedOptionsEnabled
         };
         File.WriteAllText(_path, JsonSerializer.Serialize(dto, new JsonSerializerOptions { WriteIndented = true }));
     }
@@ -100,5 +109,8 @@ public sealed class LocalSettingsStore
         public string? DownloadDirectory { get; set; }
         public string? ReadyOrNotDirectory { get; set; }
         public string? ImportDirectory { get; set; }
+        public string? ProfileLibraryDirectory { get; set; }
+        public string? ActiveProfileId { get; set; }
+        public bool AdvancedOptionsEnabled { get; set; }
     }
 }

@@ -76,6 +76,7 @@
                         <Button Content="Save settings" Click="SaveSettings_Click" Background="#3A3F28" BorderBrush="{StaticResource AccentBrush}"/>
                         <Button Content="Get API key" Click="OpenApiKeyPage_Click"/>
                     </WrapPanel>
+                    <CheckBox x:Name="AdvancedOptionsBox" Content="Advanced options" Foreground="{StaticResource TextBrush}" Margin="0,4,0,8"/>
 
                     <Separator Margin="0,16,0,16" Background="{StaticResource LineBrush}"/>
 
@@ -93,6 +94,13 @@
                     <TextBlock Text="Browser fallback import folder" FontWeight="SemiBold" Margin="0,14,0,0"/>
                     <TextBox x:Name="ImportDirectoryBox"/>
                     <Button Content="Choose import folder" Click="BrowseImportDirectory_Click"/>
+
+                    <TextBlock Text="Modpack library folder" FontWeight="SemiBold" Margin="0,14,0,0"/>
+                    <TextBox x:Name="ProfileLibraryDirectoryBox"/>
+                    <WrapPanel>
+                        <Button Content="Choose library folder" Click="BrowseProfileLibraryDirectory_Click"/>
+                        <Button Content="Open library" Click="OpenProfileLibraryDirectory_Click"/>
+                    </WrapPanel>
 
                     <Separator Margin="0,16,0,16" Background="{StaticResource LineBrush}"/>
 
@@ -114,6 +122,8 @@
                     <TextBlock Text="Collections expand into individual Nexus files before download." Foreground="{StaticResource MutedBrush}"/>
                 </StackPanel>
                 <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
+                    <Button Content="Modpacks" Click="OpenProfiles_Click"/>
+                    <Button Content="Errors" Click="OpenErrors_Click"/>
                     <Button Content="Clear completed" Click="ClearCompleted_Click"/>
                     <Button Content="Clear user data" Click="ClearUserData_Click"/>
                 </WrapPanel>
@@ -140,7 +150,11 @@
                     <Button Content="Deploy selected" Click="DeploySelected_Click"/>
                     <Button Content="Uninstall selected" Click="UninstallSelected_Click"/>
                 </StackPanel>
-                <TextBlock x:Name="StatusText" Text="Ready" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" TextAlignment="Right"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <ProgressBar x:Name="OverallProgressBar" Width="180" Height="12" Minimum="0" Maximum="100" Value="0" Margin="0,0,12,0"/>
+                    <TextBlock x:Name="ProgressText" Text="" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <TextBlock x:Name="StatusText" Text="Ready" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" TextAlignment="Right"/>
+                </StackPanel>
             </DockPanel>
         </Border>
     </Grid>
