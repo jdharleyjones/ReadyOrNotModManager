@@ -1,5 +1,10 @@
 # Release Notes
 
+## 1.2.1
+
+- Allow Import Archive to select and import multiple archive files in one dialog.
+- Extra selected archives are added as manual queue rows while a selected queue row receives the first archive.
+
 ## 1.2.0
 
 - Replace the setup-heavy sidebar with a first-time setup wizard and a professional navigation shell.

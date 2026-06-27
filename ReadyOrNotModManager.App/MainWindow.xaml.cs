@@ -467,17 +467,19 @@ public partial class MainWindow : Window
         {
             Title = "Select downloaded mod archive",
             Filter = "Mod archives (*.zip;*.rar;*.7z;*.7zip)|*.zip;*.rar;*.7z;*.7zip|All files (*.*)|*.*",
+            Multiselect = true,
             InitialDirectory = Directory.Exists(_settings.ImportDirectory) ? _settings.ImportDirectory : Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
         };
 
         if (dialog.ShowDialog(this) == true)
         {
-            item ??= CreateImportedQueueItem(dialog.FileName);
-            item.ArchivePath = dialog.FileName;
-            item.Status = "Imported archive";
-            ImportDirectoryBox.Text = Path.GetDirectoryName(dialog.FileName) ?? ImportDirectoryBox.Text;
+            var imported = ArchiveImportPlanner.ImportArchives(_queue, item, dialog.FileNames, _settings.ActiveProfileId);
+            var lastArchivePath = imported.LastOrDefault()?.ArchivePath ?? dialog.FileName;
+            ImportDirectoryBox.Text = Path.GetDirectoryName(lastArchivePath) ?? ImportDirectoryBox.Text;
             SaveSettings();
-            QueueGrid.SelectedItem = item;
+            QueueGrid.SelectedItem = imported.LastOrDefault();
+            RefreshDashboard();
+            SetStatus($"Imported {imported.Count} archive file(s).");
         }
     }
 
@@ -984,20 +986,6 @@ public partial class MainWindow : Window
     private ModQueueItem? GetSingleSelectedItem()
     {
         return QueueGrid.SelectedItems.Cast<ModQueueItem>().FirstOrDefault();
-    }
-
-    private ModQueueItem CreateImportedQueueItem(string archivePath)
-    {
-        var item = new ModQueueItem
-        {
-            ModName = Path.GetFileNameWithoutExtension(archivePath),
-            Version = "Manual",
-            SourceUrl = string.Empty,
-            ProfileId = _settings.ActiveProfileId,
-            Status = "Imported archive"
-        };
-        _queue.Add(item);
-        return item;
     }
 
     private IReadOnlyList<string> ResolveSelectedArchiveEntries(ModQueueItem item)

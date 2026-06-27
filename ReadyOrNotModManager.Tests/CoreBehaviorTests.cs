@@ -492,6 +492,31 @@ public sealed class CoreBehaviorTests
     }
 
     [Fact]
+    public void ArchiveImportPlanner_AttachesMultipleArchivesToQueue()
+    {
+        var first = Path.Combine(CreateTempDirectory(), "Alpha.zip");
+        var second = Path.Combine(CreateTempDirectory(), "Bravo.7z");
+        var queue = new List<ModQueueItem>
+        {
+            new()
+            {
+                ModName = "Existing",
+                Status = "Queued"
+            }
+        };
+
+        ArchiveImportPlanner.ImportArchives(queue, queue[0], [first, second], "profile-a");
+
+        Assert.Equal(2, queue.Count);
+        Assert.Equal(first, queue[0].ArchivePath);
+        Assert.Equal("Imported archive", queue[0].Status);
+        Assert.Equal("Bravo", queue[1].ModName);
+        Assert.Equal(second, queue[1].ArchivePath);
+        Assert.Equal("Manual", queue[1].Version);
+        Assert.Equal("profile-a", queue[1].ProfileId);
+    }
+
+    [Fact]
     public async Task NexusClient_UsesCanonicalReadyOrNotModPageForFiles()
     {
         using var http = new HttpClient(new StubHandler("""
