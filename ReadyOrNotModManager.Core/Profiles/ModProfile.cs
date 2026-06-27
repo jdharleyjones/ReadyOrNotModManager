@@ -77,6 +77,32 @@ public sealed class ModProfileStore(string libraryDirectory)
         }
     }
 
+    public ProfileRenameResult Rename(string profileId, string newName)
+    {
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            return new ProfileRenameResult(false, "Enter a modpack name.");
+        }
+
+        var profile = Load(profileId);
+        if (profile is null)
+        {
+            return new ProfileRenameResult(false, "Select a modpack first.");
+        }
+
+        var trimmed = newName.Trim();
+        if (LoadAll().Any(item =>
+            !item.ProfileId.Equals(profileId, StringComparison.OrdinalIgnoreCase) &&
+            item.Name.Equals(trimmed, StringComparison.OrdinalIgnoreCase)))
+        {
+            return new ProfileRenameResult(false, "A modpack with that name already exists.");
+        }
+
+        profile.Name = trimmed;
+        Save(profile, copyArchives: false);
+        return new ProfileRenameResult(true, string.Empty);
+    }
+
     public string GetProfileDirectory(string profileId)
     {
         return Path.Combine(libraryDirectory, profileId);
@@ -156,3 +182,5 @@ public sealed class ModProfileStore(string libraryDirectory)
         return string.IsNullOrWhiteSpace(sanitized) ? "archive.zip" : sanitized;
     }
 }
+
+public sealed record ProfileRenameResult(bool Success, string Message);

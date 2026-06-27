@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.2.3`
+Version: `1.2.4`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -42,17 +42,21 @@ The main dashboard shows game detection, Nexus connection, installed mod count, 
 
 The Queue page has its own Nexus URL input and action buttons. Button colours follow the action type: blue for download, green for deploy, red for delete/uninstall/clear, steel-blue for add/import/open, and brass for profile or special actions.
 
+Use **Remove selected** on the Queue page to remove accidental or duplicate queue entries without deleting downloaded archives or uninstalling deployed files.
+
 The downloader supports ZIP, RAR, 7z, and `.7zip` archive aliases. If Nexus serves a RAR or 7z file when the queue expected a zip, the app detects the real archive type and corrects the saved extension.
 
 Use **Import archive** to attach a manually downloaded ZIP/RAR/7z file to the selected queue row. If nothing is selected, the app creates a standalone imported-archive row. Use **Delete download** to remove selected archive files from disk without uninstalling deployed mod files.
 
 Use **Advanced options** when you want to choose which `.pak` groups deploy from an archive that contains multiple mod variants. The app groups matching `.pak`, `.ucas`, `.utoc`, and `.sig` files together so the selected variant deploys with its required companion files.
 
-Use **Modpacks** to save the current queue as a local profile, load a profile back into the queue, or activate a profile. Activating a profile uninstalls files tracked for the previously active profile, then deploys the chosen profile's available archives. Profile data and copied archives are stored in the configured modpack library folder.
+Use **Modpacks** to save the current queue as a local profile, load a profile back into the queue, rename a modpack from the right-click menu, or activate a profile. Activating a profile uninstalls files tracked for the previously active profile, then deploys the chosen profile's available archives. Profile data and copied archives are stored in the configured modpack library folder.
 
 Long download and deploy operations report overall progress in the bottom status bar. Failed items are skipped so the rest of the queue can continue.
 
-Version 1.2.3 adds dashboard and queue workflow polish, a **Run Game** shortcut, persistent recent activity, and a custom redistributable app icon.
+Version 1.2.4 adds queue cleanup, persistent colour themes, modpack rename support, dashboard update status, a polished Downloads WIP marker, and dashboard quick-action layout improvements.
+
+Use the **Colour scheme** selector in Settings to switch between Tactical default, Claude, ChatGPT, and Hacker themes. The selected theme is saved locally and applied on future launches.
 
 Use **Errors** to review failed download/deploy items. The error page can open the Nexus page, game folder, archive folder, or copy a manual-fix note for the selected failure.
 

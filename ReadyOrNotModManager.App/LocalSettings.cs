@@ -13,6 +13,7 @@ public sealed class LocalSettings
     public string ImportDirectory { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
     public string ProfileLibraryDirectory { get; set; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Documents", "ReadyOrNotModpacks");
     public string ActiveProfileId { get; set; } = string.Empty;
+    public string ThemeName { get; set; } = Services.ThemeManager.DefaultThemeName;
     public bool AdvancedOptionsEnabled { get; set; }
     public bool SetupCompleted { get; set; }
     public bool ForceSetupWizard { get; set; }
@@ -45,6 +46,7 @@ public sealed class LocalSettingsStore
             ImportDirectory = string.IsNullOrWhiteSpace(dto.ImportDirectory) ? defaults.ImportDirectory : dto.ImportDirectory,
             ProfileLibraryDirectory = string.IsNullOrWhiteSpace(dto.ProfileLibraryDirectory) ? defaults.ProfileLibraryDirectory : dto.ProfileLibraryDirectory,
             ActiveProfileId = dto.ActiveProfileId ?? string.Empty,
+            ThemeName = Services.ThemeManager.ResolveThemeName(dto.ThemeName),
             AdvancedOptionsEnabled = dto.AdvancedOptionsEnabled,
             SetupCompleted = dto.SetupCompleted,
             ForceSetupWizard = dto.ForceSetupWizard
@@ -61,6 +63,7 @@ public sealed class LocalSettingsStore
             ImportDirectory = settings.ImportDirectory,
             ProfileLibraryDirectory = settings.ProfileLibraryDirectory,
             ActiveProfileId = settings.ActiveProfileId,
+            ThemeName = Services.ThemeManager.ResolveThemeName(settings.ThemeName),
             AdvancedOptionsEnabled = settings.AdvancedOptionsEnabled,
             SetupCompleted = settings.SetupCompleted,
             ForceSetupWizard = settings.ForceSetupWizard
@@ -117,6 +120,7 @@ public sealed class LocalSettingsStore
         public string? ImportDirectory { get; set; }
         public string? ProfileLibraryDirectory { get; set; }
         public string? ActiveProfileId { get; set; }
+        public string? ThemeName { get; set; }
         public bool AdvancedOptionsEnabled { get; set; }
         public bool SetupCompleted { get; set; }
         public bool ForceSetupWizard { get; set; }

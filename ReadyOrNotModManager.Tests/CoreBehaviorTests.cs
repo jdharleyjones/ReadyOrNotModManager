@@ -274,6 +274,18 @@ public sealed class CoreBehaviorTests
 
         Assert.False(loaded.SetupCompleted);
         Assert.False(loaded.ForceSetupWizard);
+        Assert.Equal(ThemeManager.DefaultThemeName, loaded.ThemeName);
+    }
+
+    [Fact]
+    public void LocalSettingsStore_RoundTripsThemeName()
+    {
+        var directory = CreateTempDirectory();
+        var store = new LocalSettingsStore(directory);
+
+        store.Save(new LocalSettings { ThemeName = "hacker" });
+
+        Assert.Equal("hacker", store.Load().ThemeName);
     }
 
     [Fact]
@@ -653,6 +665,63 @@ public sealed class CoreBehaviorTests
             ]);
 
         Assert.Equal(["Alpha", "Charlie"], selected.Select(item => item.ModName).ToArray());
+    }
+
+    [Fact]
+    public void QueueDeploymentPlanner_RemovesSelectedItemsOnlyFromQueue()
+    {
+        var keep = new ModQueueItem { ModName = "Keep", ArchivePath = "C:\\Mods\\Keep.zip", InstallId = "install-1" };
+        var remove = new ModQueueItem { ModName = "Remove", ArchivePath = "C:\\Mods\\Remove.zip", InstallId = "install-2" };
+        var queue = new List<ModQueueItem> { keep, remove };
+
+        var removed = QueueDeploymentPlanner.RemoveSelectedItems(queue, [remove]);
+
+        Assert.Equal([keep], queue);
+        Assert.Equal([remove], removed);
+        Assert.Equal("C:\\Mods\\Remove.zip", remove.ArchivePath);
+        Assert.Equal("install-2", remove.InstallId);
+    }
+
+    [Fact]
+    public void ThemeManager_ProvidesNamedThemesAndFallsBackToDefault()
+    {
+        Assert.Contains(ThemeManager.Themes, theme => theme.Name == "claude");
+        Assert.Contains(ThemeManager.Themes, theme => theme.Name == "chatgpt");
+        Assert.Contains(ThemeManager.Themes, theme => theme.Name == "hacker");
+
+        Assert.Equal(ThemeManager.DefaultThemeName, ThemeManager.ResolveThemeName("missing"));
+    }
+
+    [Fact]
+    public async Task AppUpdateChecker_ReportsUpToDateAndAvailableAndUnavailable()
+    {
+        var current = new Version(1, 2, 4, 0);
+        using var upToDateHttp = new HttpClient(new StatusStubHandler(HttpStatusCode.OK, """{"tag_name":"v1.2.4"}"""));
+        using var updateHttp = new HttpClient(new StatusStubHandler(HttpStatusCode.OK, """{"tag_name":"v1.2.5"}"""));
+        using var failedHttp = new HttpClient(new StatusStubHandler(HttpStatusCode.InternalServerError, "{}"));
+
+        var upToDate = await new AppUpdateChecker(upToDateHttp).CheckLatestAsync(current, CancellationToken.None);
+        var update = await new AppUpdateChecker(updateHttp).CheckLatestAsync(current, CancellationToken.None);
+        var failed = await new AppUpdateChecker(failedHttp).CheckLatestAsync(current, CancellationToken.None);
+
+        Assert.Equal(AppUpdateStatus.UpToDate, upToDate.Status);
+        Assert.Equal(AppUpdateStatus.UpdateAvailable, update.Status);
+        Assert.Equal("v1.2.5", update.LatestTag);
+        Assert.Equal(AppUpdateStatus.UnableToCheck, failed.Status);
+    }
+
+    [Fact]
+    public void ModProfileStore_RenamesProfileAndRejectsInvalidNames()
+    {
+        var root = CreateTempDirectory();
+        var store = new ModProfileStore(root);
+        var profile = store.Save(new ModProfile { Name = "Old name" }, copyArchives: false);
+
+        var renamed = store.Rename(profile.ProfileId, "New name");
+
+        Assert.True(renamed.Success);
+        Assert.Equal("New name", store.Load(profile.ProfileId)?.Name);
+        Assert.False(store.Rename(profile.ProfileId, " ").Success);
     }
 
     [Fact]

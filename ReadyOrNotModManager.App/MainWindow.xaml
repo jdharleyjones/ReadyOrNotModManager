@@ -246,7 +246,7 @@
                 <Grid Grid.Row="1">
                     <ScrollViewer x:Name="DashboardPage" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <UniformGrid Columns="4" Margin="0,0,0,16">
+                            <UniformGrid Columns="5" Margin="0,0,0,16">
                                 <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="18" Margin="0,0,12,0">
                                     <StackPanel><TextBlock Text="Game status" Foreground="{StaticResource MutedBrush}"/><TextBlock x:Name="DashboardGameStatusText" Text="Not detected" FontSize="22" FontWeight="SemiBold"/></StackPanel>
                                 </Border>
@@ -259,6 +259,9 @@
                                 <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="18">
                                     <StackPanel><TextBlock Text="Pending queue" Foreground="{StaticResource MutedBrush}"/><TextBlock x:Name="PendingQueueCountText" Text="0" FontSize="28" FontWeight="SemiBold" Foreground="{StaticResource BlueBrush}"/></StackPanel>
                                 </Border>
+                                <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="18" Margin="12,0,0,0">
+                                    <StackPanel><TextBlock Text="App version" Foreground="{StaticResource MutedBrush}"/><TextBlock x:Name="DashboardUpdateStatusText" Text="Current: checking" TextWrapping="Wrap" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource AccentBrush}"/></StackPanel>
+                                </Border>
                             </UniformGrid>
 
                             <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="18" Margin="0,0,0,16">
@@ -266,15 +269,17 @@
                                     <TextBlock Text="Quick actions" FontSize="20" FontWeight="SemiBold"/>
                                     <TextBlock Text="Paste a Nexus mod or collection URL, then queue, import, or deploy without leaving the dashboard." Foreground="{StaticResource MutedBrush}" Margin="0,2,0,12"/>
                                     <TextBox x:Name="UrlBox" ToolTip="Paste a Ready or Not mod or collection URL"/>
-                                    <WrapPanel>
-                                        <Button Content="Add Nexus URL" Click="AddUrl_Click" Tag="{Binding ElementName=UrlBox}" Style="{StaticResource ActionButton}"/>
-                                        <Button Content="Import Archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
-                                        <Button Content="Deploy all downloaded" Click="DeployDownloaded_Click" Style="{StaticResource DeployButton}"/>
-                                        <Button Content="Show Modpacks" Click="ModpacksNav_Click" Style="{StaticResource SpecialButton}"/>
-                                        <Button Content="Run Game" Click="RunGame_Click" Style="{StaticResource DeployButton}"/>
-                                        <Button Content="Open Mods Folder" Click="OpenModsFolder_Click" Style="{StaticResource ActionButton}"/>
-                                        <Button Content="Open Game Folder" Click="OpenGameFolder_Click" Style="{StaticResource ActionButton}"/>
-                                    </WrapPanel>
+                                    <DockPanel LastChildFill="True">
+                                        <Button Content="Run Game" Click="RunGame_Click" DockPanel.Dock="Right" HorizontalAlignment="Right" Style="{StaticResource DeployButton}"/>
+                                        <WrapPanel>
+                                            <Button Content="Add Nexus URL" Click="AddUrl_Click" Tag="{Binding ElementName=UrlBox}" Style="{StaticResource ActionButton}"/>
+                                            <Button Content="Import Archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
+                                            <Button Content="Deploy all downloaded" Click="DeployDownloaded_Click" Style="{StaticResource DeployButton}"/>
+                                            <Button Content="Show Modpacks" Click="ModpacksNav_Click" Style="{StaticResource SpecialButton}"/>
+                                            <Button Content="Open Mods Folder" Click="OpenModsFolder_Click" Style="{StaticResource ActionButton}"/>
+                                            <Button Content="Open Game Folder" Click="OpenGameFolder_Click" Style="{StaticResource ActionButton}"/>
+                                        </WrapPanel>
+                                    </DockPanel>
                                 </StackPanel>
                             </Border>
 
@@ -330,13 +335,19 @@
                             <Button Content="Delete download" Click="DeleteDownloadedArchive_Click" Style="{StaticResource DangerButton}"/>
                             <Button Content="Deploy selected" Click="DeploySelected_Click" Style="{StaticResource DeployButton}"/>
                             <Button Content="Uninstall selected" Click="UninstallSelected_Click" Style="{StaticResource DangerButton}"/>
+                            <Button Content="Remove selected" Click="RemoveSelectedQueueItems_Click" Style="{StaticResource DangerButton}"/>
                             <Button Content="Clear completed" Click="ClearCompleted_Click" Style="{StaticResource DangerButton}"/>
                         </WrapPanel>
                     </Grid>
 
                     <Grid x:Name="ModpacksPage" Visibility="Collapsed">
                         <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                        <DataGrid x:Name="ProfilesGrid" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" SelectionMode="Single" AlternationCount="2">
+                        <DataGrid x:Name="ProfilesGrid" AutoGenerateColumns="False" CanUserAddRows="False" IsReadOnly="True" SelectionMode="Single" AlternationCount="2" PreviewMouseRightButtonDown="ProfilesGrid_PreviewMouseRightButtonDown">
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Rename modpack" Click="RenameProfile_Click"/>
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
                                 <DataGridTextColumn Header="Mods" Binding="{Binding Items.Count}" Width="80"/>
@@ -366,6 +377,12 @@
                                 <Button Content="Delete selected download" Click="DeleteDownloadedArchive_Click" Style="{StaticResource DangerButton}"/>
                                 <Button Content="Download missing queue items" Click="DownloadMissing_Click" Style="{StaticResource DownloadButton}"/>
                             </WrapPanel>
+                            <Border Background="{StaticResource PanelBrush}" BorderBrush="{StaticResource AccentBrush}" BorderThickness="1" Padding="34" Margin="0,42,0,0">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="WIP" FontSize="72" FontWeight="Bold" Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Downloads workspace is still being expanded." Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
 
@@ -375,6 +392,9 @@
                             <PasswordBox x:Name="ApiKeyBox"/>
                             <WrapPanel><Button Content="Save settings" Click="SaveSettings_Click" Style="{StaticResource SpecialButton}"/><Button Content="Get API key" Click="OpenApiKeyPage_Click" Style="{StaticResource ActionButton}"/><Button Content="Test Connection" Click="TestConnection_Click" Style="{StaticResource DownloadButton}"/></WrapPanel>
                             <CheckBox x:Name="AdvancedOptionsBox" Content="Advanced options" Foreground="{StaticResource TextBrush}" Margin="0,8,0,18"/>
+
+                            <TextBlock Text="Colour scheme" FontWeight="SemiBold"/>
+                            <ComboBox x:Name="ThemeSelector" DisplayMemberPath="DisplayName" SelectedValuePath="Name" SelectionChanged="ThemeSelection_Changed" Margin="0,6,0,16"/>
 
                             <TextBlock Text="Ready or Not install folder" FontWeight="SemiBold"/>
                             <TextBox x:Name="GameDirectoryBox"/>

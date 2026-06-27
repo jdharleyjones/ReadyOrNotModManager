@@ -1,5 +1,14 @@
 # Release Notes
 
+## 1.2.4
+
+- Add Remove selected on the Queue page for accidental or duplicate queue entries.
+- Move Run Game to the far right of the Dashboard quick actions panel.
+- Add persistent colour themes: Tactical default, Claude, ChatGPT, and Hacker.
+- Add right-click rename support for Modpacks.
+- Add Dashboard update status showing the current version and latest GitHub release state.
+- Add a polished WIP marker on the Downloads page.
+
 ## 1.2.3
 
 - Add a Queue page Nexus URL input and Add Nexus URL button.

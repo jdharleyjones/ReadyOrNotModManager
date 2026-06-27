@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -36,6 +37,8 @@ public partial class MainWindow : Window
     private readonly string _appDataDirectory;
     private LocalSettings _settings = new();
     private string _lastNexusStatus = "Not tested";
+    private bool _loadingSettings;
+    private bool _hasCheckedForUpdates;
 
     public MainWindow()
     {
@@ -46,6 +49,7 @@ public partial class MainWindow : Window
         InstalledModsGrid.ItemsSource = _installedMods;
         ProfilesGrid.ItemsSource = _profiles;
         ErrorsGrid.ItemsSource = _errors;
+        ThemeSelector.ItemsSource = ThemeManager.Themes;
         LoadSettings();
         RefreshShellData();
         ShowInitialView();
@@ -53,19 +57,29 @@ public partial class MainWindow : Window
 
     private void LoadSettings()
     {
-        _settings = _settingsStore.Load();
-        ApiKeyBox.Password = _settings.ApiKey;
-        DownloadDirectoryBox.Text = _settings.DownloadDirectory;
-        GameDirectoryBox.Text = _settings.ReadyOrNotDirectory;
-        ImportDirectoryBox.Text = _settings.ImportDirectory;
-        ProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
-        AdvancedOptionsBox.IsChecked = _settings.AdvancedOptionsEnabled;
-        SetupApiKeyBox.Password = _settings.ApiKey;
-        SetupDownloadDirectoryBox.Text = _settings.DownloadDirectory;
-        SetupGameDirectoryBox.Text = _settings.ReadyOrNotDirectory;
-        SetupImportDirectoryBox.Text = _settings.ImportDirectory;
-        SetupProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
-        ValidateSetupFields();
+        _loadingSettings = true;
+        try
+        {
+            _settings = _settingsStore.Load();
+            ApiKeyBox.Password = _settings.ApiKey;
+            DownloadDirectoryBox.Text = _settings.DownloadDirectory;
+            GameDirectoryBox.Text = _settings.ReadyOrNotDirectory;
+            ImportDirectoryBox.Text = _settings.ImportDirectory;
+            ProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
+            AdvancedOptionsBox.IsChecked = _settings.AdvancedOptionsEnabled;
+            ThemeSelector.SelectedValue = ThemeManager.ResolveThemeName(_settings.ThemeName);
+            ThemeManager.ApplyTheme(Resources, _settings.ThemeName);
+            SetupApiKeyBox.Password = _settings.ApiKey;
+            SetupDownloadDirectoryBox.Text = _settings.DownloadDirectory;
+            SetupGameDirectoryBox.Text = _settings.ReadyOrNotDirectory;
+            SetupImportDirectoryBox.Text = _settings.ImportDirectory;
+            SetupProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
+            ValidateSetupFields();
+        }
+        finally
+        {
+            _loadingSettings = false;
+        }
     }
 
     private void ShowInitialView()
@@ -81,6 +95,7 @@ public partial class MainWindow : Window
         SetupRoot.Visibility = Visibility.Collapsed;
         ShellRoot.Visibility = Visibility.Visible;
         ShowPage(DashboardPage, "Dashboard", "Ready or Not mod deployment overview");
+        _ = CheckForUpdatesAsync();
     }
 
     private void RefreshShellData()
@@ -130,6 +145,9 @@ public partial class MainWindow : Window
         RailNexusStatusText.Text = nexusStatus;
         SetRailStatusIcon(RailNexusStatusIcon, GetNexusRailStatus(nexusStatus));
         DashboardNexusStatusText.Text = nexusStatus;
+        DashboardUpdateStatusText.Text = string.IsNullOrWhiteSpace(DashboardUpdateStatusText.Text)
+            ? $"Current: v{GetCurrentVersion()}"
+            : DashboardUpdateStatusText.Text;
 
         var summary = DashboardSummaryFactory.Create(CreateManifestStore().Load(), _queue, CreateErrorLogStore().Load(), CreateActivityLogStore().Load());
         InstalledModCountText.Text = summary.InstalledModCount.ToString();
@@ -194,10 +212,46 @@ public partial class MainWindow : Window
 
     private void LogsNav_Click(object sender, RoutedEventArgs e) => ShowPage(LogsPage, "Logs/Errors", "Download and deployment failures");
 
+    private async Task CheckForUpdatesAsync()
+    {
+        if (_hasCheckedForUpdates)
+        {
+            return;
+        }
+
+        _hasCheckedForUpdates = true;
+        DashboardUpdateStatusText.Text = $"Current: v{GetCurrentVersion()} | Checking...";
+        using var http = new HttpClient();
+        var result = await new AppUpdateChecker(http).CheckLatestAsync(GetCurrentVersion(), CancellationToken.None);
+        DashboardUpdateStatusText.Text = result.Status switch
+        {
+            AppUpdateStatus.UpToDate => $"Current: v{GetCurrentVersion()} | Up to date",
+            AppUpdateStatus.UpdateAvailable => $"Current: v{GetCurrentVersion()} | {result.Message}",
+            _ => $"Current: v{GetCurrentVersion()} | Unable to check"
+        };
+    }
+
+    private static Version GetCurrentVersion()
+    {
+        return Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0);
+    }
+
     private void SaveSettings_Click(object sender, RoutedEventArgs e)
     {
         SaveSettings();
         SetStatus("Settings saved.");
+    }
+
+    private void ThemeSelection_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingSettings || ThemeSelector.SelectedValue is not string themeName)
+        {
+            return;
+        }
+
+        ThemeManager.ApplyTheme(Resources, themeName);
+        SaveSettings();
+        SetStatus($"Theme changed: {ThemeManager.GetTheme(themeName).DisplayName}");
     }
 
     private void OpenApiKeyPage_Click(object sender, RoutedEventArgs e)
@@ -565,6 +619,20 @@ public partial class MainWindow : Window
         SetStatus("Downloaded archive file(s) deleted.");
     }
 
+    private void RemoveSelectedQueueItems_Click(object sender, RoutedEventArgs e)
+    {
+        var items = GetSelectedItems(requireSelection: true);
+        if (items.Count == 0)
+        {
+            SetStatus("Select queue items before removing them.");
+            return;
+        }
+
+        var removed = QueueDeploymentPlanner.RemoveSelectedItems(_queue, items);
+        RefreshDashboard();
+        SetStatus($"Removed {removed.Count} queue item(s).");
+    }
+
     private async void DeploySelected_Click(object sender, RoutedEventArgs e)
     {
         await RunUiTaskAsync(async () =>
@@ -858,6 +926,47 @@ public partial class MainWindow : Window
         SetStatus($"Deleted modpack: {profile.Name}");
     }
 
+    private void ProfilesGrid_PreviewMouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        var row = FindAncestor<DataGridRow>((DependencyObject)e.OriginalSource);
+        if (row is not null)
+        {
+            row.IsSelected = true;
+            ProfilesGrid.SelectedItem = row.Item;
+        }
+    }
+
+    private void RenameProfile_Click(object sender, RoutedEventArgs e)
+    {
+        var profile = GetSelectedProfile();
+        if (profile is null)
+        {
+            return;
+        }
+
+        var oldName = profile.Name;
+        var requestedName = string.IsNullOrWhiteSpace(ProfileNameBox.Text)
+            ? ShowRenamePrompt(oldName)
+            : ProfileNameBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(requestedName))
+        {
+            SetStatus("Rename canceled.");
+            return;
+        }
+
+        var result = CreateProfileStore().Rename(profile.ProfileId, requestedName);
+        if (!result.Success)
+        {
+            SetStatus(result.Message);
+            return;
+        }
+
+        RefreshProfiles();
+        ProfilesGrid.SelectedItem = _profiles.FirstOrDefault(item => item.ProfileId == profile.ProfileId);
+        ProfileNameBox.Clear();
+        SetStatus($"Renamed modpack: {oldName} -> {requestedName.Trim()}");
+    }
+
     private void OpenErrorNexus_Click(object sender, RoutedEventArgs e)
     {
         var entry = GetSelectedError();
@@ -976,6 +1085,7 @@ public partial class MainWindow : Window
             ImportDirectory = string.IsNullOrWhiteSpace(ImportDirectoryBox.Text) ? defaults.ImportDirectory : ImportDirectoryBox.Text.Trim(),
             ProfileLibraryDirectory = string.IsNullOrWhiteSpace(ProfileLibraryDirectoryBox.Text) ? defaults.ProfileLibraryDirectory : ProfileLibraryDirectoryBox.Text.Trim(),
             ActiveProfileId = _settings.ActiveProfileId,
+            ThemeName = ThemeSelector.SelectedValue as string ?? _settings.ThemeName,
             AdvancedOptionsEnabled = AdvancedOptionsBox.IsChecked == true,
             SetupCompleted = setupCompleted ?? _settings.SetupCompleted,
             ForceSetupWizard = forceSetupWizard ?? _settings.ForceSetupWizard
@@ -1278,6 +1388,68 @@ public partial class MainWindow : Window
 
         selectedPath = string.Empty;
         return false;
+    }
+
+    private string ShowRenamePrompt(string currentName)
+    {
+        var dialog = new Window
+        {
+            Owner = this,
+            Title = "Rename modpack",
+            Width = 420,
+            Height = 170,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ResizeMode = ResizeMode.NoResize,
+            Background = (System.Windows.Media.Brush)FindResource("PanelBrush")
+        };
+        var input = new System.Windows.Controls.TextBox
+        {
+            Text = currentName,
+            Margin = new Thickness(0, 8, 0, 12)
+        };
+        var result = string.Empty;
+        var saveButton = new System.Windows.Controls.Button
+        {
+            Content = "Rename",
+            Style = (Style)FindResource("SpecialButton")
+        };
+        saveButton.Click += (_, _) =>
+        {
+            result = input.Text.Trim();
+            dialog.DialogResult = true;
+        };
+
+        dialog.Content = new StackPanel
+        {
+            Margin = new Thickness(18),
+            Children =
+            {
+                new TextBlock { Text = "Modpack name", FontWeight = FontWeights.SemiBold },
+                input,
+                new WrapPanel
+                {
+                    HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
+                    Children = { saveButton }
+                }
+            }
+        };
+        input.SelectAll();
+        return dialog.ShowDialog() == true ? result : string.Empty;
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
+    {
+        while (current is not null)
+        {
+            if (current is T match)
+            {
+                return match;
+            }
+
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return null;
     }
 
     private static string BuildArchiveFileName(ModQueueItem item)
