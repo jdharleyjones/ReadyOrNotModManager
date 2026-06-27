@@ -1,5 +1,15 @@
 # Release Notes
 
+## 1.2.2
+
+- Fix deployment identity so multiple selected manual/imported archives no longer replace each other.
+- Fix multiple Nexus files from the same mod page deploying as separate selected queue items.
+- Run deployment extraction on background work so the progress bar can update while archives are copied.
+- Enlarge the bottom progress bar and make current operation text easier to read.
+- Move game/Nexus connection status into the sidebar with clear connected, unknown, and disconnected icons.
+- Remove the top-right Add Nexus URL and Settings shortcuts from the shell header.
+- Improve table header contrast across queue, modpack, log, and archive selection tables.
+
 ## 1.2.1
 
 - Allow Import Archive to select and import multiple archive files in one dialog.

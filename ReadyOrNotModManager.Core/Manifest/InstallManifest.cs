@@ -10,6 +10,8 @@ public sealed class InstallManifest
 public sealed class InstalledModRecord
 {
     public string InstallId { get; set; } = Guid.NewGuid().ToString("N");
+    public int ModId { get; set; }
+    public int FileId { get; set; }
     public string ModName { get; set; } = string.Empty;
     public string SourceUrl { get; set; } = string.Empty;
     public string ArchivePath { get; set; } = string.Empty;

@@ -152,6 +152,21 @@ public sealed class CoreBehaviorTests
     }
 
     [Fact]
+    public void ArchiveScanner_ReportsIntermediateExtractionProgress()
+    {
+        var archivePath = CreateZip(
+            ("mods/Alpha.pak", "alpha pak"),
+            ("mods/Beta.pak", "beta pak"));
+        var destination = CreateTempDirectory();
+        var reports = new List<double>();
+
+        ArchiveScanner.ExtractDeployableFiles(archivePath, destination, progress: new CaptureProgress(reports));
+
+        Assert.Contains(reports, value => value > 0 && value < 1);
+        Assert.Equal(1, reports.Last());
+    }
+
+    [Fact]
     public async Task DownloadManager_RenamesArchiveToDetectedFormat()
     {
         var directory = CreateTempDirectory();
@@ -340,6 +355,83 @@ public sealed class CoreBehaviorTests
         Assert.DoesNotContain(second.DeployedFiles, path => Path.GetFileNameWithoutExtension(path).EndsWith("-1", StringComparison.OrdinalIgnoreCase));
         Assert.Equal(first.DeployedFiles, second.DeployedFiles);
         Assert.Single(store.Load().Records);
+    }
+
+    [Fact]
+    public void DeploymentManager_DeploysManyManualArchivesWithoutReplacingPreviousFiles()
+    {
+        var root = CreateTempDirectory();
+        var game = Path.Combine(root, "ReadyOrNot");
+        var paks = Path.Combine(game, "ReadyOrNot", "Content", "Paks");
+        Directory.CreateDirectory(paks);
+        var store = new InstallManifestStore(Path.Combine(root, "manifest.json"));
+        var manager = new DeploymentManager(store);
+        var archives = Enumerable
+            .Range(1, 20)
+            .Select(index => CreateZip(($"nested/Manual{index}.pak", $"pak {index}")))
+            .ToArray();
+
+        foreach (var archive in archives)
+        {
+            manager.Deploy(new DeploymentRequest(
+                ModName: Path.GetFileNameWithoutExtension(archive),
+                SourceUrl: string.Empty,
+                ArchivePath: archive,
+                ReadyOrNotInstallDirectory: game));
+        }
+
+        var manifest = store.Load();
+        Assert.Equal(20, manifest.Records.Count);
+        Assert.Equal(20, Directory.GetFiles(paks, "*.pak").Length);
+    }
+
+    [Fact]
+    public void DeploymentManager_DeploysMultipleNexusFilesFromSameModPage()
+    {
+        var root = CreateTempDirectory();
+        var game = Path.Combine(root, "ReadyOrNot");
+        var paks = Path.Combine(game, "ReadyOrNot", "Content", "Paks");
+        Directory.CreateDirectory(paks);
+        var firstArchive = CreateZip(("nested/Main.pak", "pak"));
+        var secondArchive = CreateZip(("nested/Optional.pak", "pak"));
+        var store = new InstallManifestStore(Path.Combine(root, "manifest.json"));
+        var manager = new DeploymentManager(store);
+        const string sourceUrl = "https://www.nexusmods.com/readyornot/mods/7975";
+
+        manager.Deploy(new DeploymentRequest("Main", sourceUrl, firstArchive, game, ModId: 7975, FileId: 28406));
+        manager.Deploy(new DeploymentRequest("Optional", sourceUrl, secondArchive, game, ModId: 7975, FileId: 28407));
+
+        var manifest = store.Load();
+        Assert.Equal(2, manifest.Records.Count);
+        Assert.Equal(2, Directory.GetFiles(paks, "*.pak").Length);
+    }
+
+    [Fact]
+    public void DeploymentManager_RedeploysExplicitInstallRecordOnly()
+    {
+        var root = CreateTempDirectory();
+        var game = Path.Combine(root, "ReadyOrNot");
+        var paks = Path.Combine(game, "ReadyOrNot", "Content", "Paks");
+        Directory.CreateDirectory(paks);
+        var firstArchive = CreateZip(("nested/Alpha.pak", "old"));
+        var secondArchive = CreateZip(("nested/Bravo.pak", "pak"));
+        var replacementArchive = CreateZip(("nested/AlphaNew.pak", "new"));
+        var store = new InstallManifestStore(Path.Combine(root, "manifest.json"));
+        var manager = new DeploymentManager(store);
+
+        var first = manager.Deploy(new DeploymentRequest("Alpha", string.Empty, firstArchive, game));
+        var second = manager.Deploy(new DeploymentRequest("Bravo", string.Empty, secondArchive, game));
+        var replacement = manager.Deploy(new DeploymentRequest(
+            "Alpha",
+            string.Empty,
+            replacementArchive,
+            game,
+            ExistingInstallId: first.InstallId));
+
+        Assert.All(first.DeployedFiles, path => Assert.False(File.Exists(path)));
+        Assert.All(second.DeployedFiles, path => Assert.True(File.Exists(path)));
+        Assert.All(replacement.DeployedFiles, path => Assert.True(File.Exists(path)));
+        Assert.Equal(2, store.Load().Records.Count);
     }
 
     [Fact]
@@ -677,6 +769,14 @@ public sealed class CoreBehaviorTests
             {
                 Content = new StringContent(responseBody)
             });
+        }
+    }
+
+    private sealed class CaptureProgress(List<double> reports) : IProgress<double>
+    {
+        public void Report(double value)
+        {
+            reports.Add(value);
         }
     }
 }

@@ -9,6 +9,9 @@ public sealed record DeploymentRequest(
     string ArchivePath,
     string ReadyOrNotInstallDirectory,
     string ProfileId = "",
+    int ModId = 0,
+    int FileId = 0,
+    string ExistingInstallId = "",
     IReadOnlyCollection<string>? SelectedArchiveEntries = null,
     IProgress<double>? Progress = null);
 
@@ -23,11 +26,7 @@ public sealed class DeploymentManager(InstallManifestStore manifestStore)
         }
 
         var manifest = manifestStore.Load();
-        foreach (var existing in manifest.Records
-            .Where(existing =>
-                existing.SourceUrl.Equals(request.SourceUrl, StringComparison.OrdinalIgnoreCase) &&
-                existing.ProfileId.Equals(request.ProfileId, StringComparison.OrdinalIgnoreCase))
-            .ToArray())
+        foreach (var existing in manifest.Records.Where(existing => ShouldReplace(existing, request)).ToArray())
         {
             DeleteDeployedFiles(existing);
             manifest.Records.Remove(existing);
@@ -46,6 +45,8 @@ public sealed class DeploymentManager(InstallManifestStore manifestStore)
         var record = new InstalledModRecord
         {
             ModName = request.ModName,
+            ModId = request.ModId,
+            FileId = request.FileId,
             SourceUrl = request.SourceUrl,
             ArchivePath = request.ArchivePath,
             ProfileId = request.ProfileId,
@@ -56,6 +57,32 @@ public sealed class DeploymentManager(InstallManifestStore manifestStore)
         manifest.Records.Add(record);
         manifestStore.Save(manifest);
         return record;
+    }
+
+    private static bool ShouldReplace(InstalledModRecord existing, DeploymentRequest request)
+    {
+        if (!existing.ProfileId.Equals(request.ProfileId, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ExistingInstallId))
+        {
+            return existing.InstallId.Equals(request.ExistingInstallId, StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (request.ModId > 0 && request.FileId > 0)
+        {
+            return existing.ModId == request.ModId && existing.FileId == request.FileId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.ArchivePath))
+        {
+            return existing.ArchivePath.Equals(request.ArchivePath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return !string.IsNullOrWhiteSpace(request.SourceUrl) &&
+            existing.SourceUrl.Equals(request.SourceUrl, StringComparison.OrdinalIgnoreCase);
     }
 
     public void Uninstall(string installId)

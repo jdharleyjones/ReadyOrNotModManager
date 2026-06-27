@@ -82,6 +82,8 @@ public static class ArchiveScanner
             })
             .ToArray();
 
+        var totalBytes = entries.Sum(entry => Math.Max(entry.Size, 1));
+        long copiedBytes = 0;
         for (var index = 0; index < entries.Length; index++)
         {
             var entry = entries[index];
@@ -89,13 +91,36 @@ public static class ArchiveScanner
             var destination = GetUniqueDestination(destinationDirectory, Path.GetFileName(key!));
             using var input = entry.OpenEntryStream();
             using var output = File.Create(destination);
-            input.CopyTo(output);
+            copiedBytes = CopyWithProgress(input, output, Math.Max(entry.Size, 1), copiedBytes, totalBytes, progress);
             deployed.Add(destination);
-            progress?.Report((index + 1) / (double)entries.Length);
         }
 
         progress?.Report(1);
         return deployed;
+    }
+
+    private static long CopyWithProgress(
+        Stream input,
+        Stream output,
+        long entrySize,
+        long copiedBeforeEntry,
+        long totalBytes,
+        IProgress<double>? progress)
+    {
+        var buffer = new byte[81920];
+        long copiedInEntry = 0;
+        int read;
+        while ((read = input.Read(buffer, 0, buffer.Length)) > 0)
+        {
+            output.Write(buffer, 0, read);
+            copiedInEntry += read;
+            if (totalBytes > 0)
+            {
+                progress?.Report(Math.Clamp((copiedBeforeEntry + Math.Min(copiedInEntry, entrySize)) / (double)totalBytes, 0, 1));
+            }
+        }
+
+        return copiedBeforeEntry + entrySize;
     }
 
     private static IArchive OpenSupportedArchive(string archivePath)

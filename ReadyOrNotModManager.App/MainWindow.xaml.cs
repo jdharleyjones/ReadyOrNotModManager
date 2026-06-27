@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using MahApps.Metro.IconPacks;
 using ReadyOrNotModManager.Core.Archives;
 using ReadyOrNotModManager.Core.Deployment;
 using ReadyOrNotModManager.Core.Diagnostics;
@@ -19,6 +20,13 @@ namespace ReadyOrNotModManager.App;
 
 public partial class MainWindow : Window
 {
+    private enum RailStatusState
+    {
+        Unknown,
+        Connected,
+        Disconnected
+    }
+
     private const string NexusApiKeyPage = "https://www.nexusmods.com/users/myaccount?tab=api%20access";
     private readonly ObservableCollection<ModQueueItem> _queue = [];
     private readonly ObservableCollection<InstalledModRecord> _installedMods = [];
@@ -116,9 +124,12 @@ public partial class MainWindow : Window
         var gameOk = ReadyOrNotPaths.LooksLikeInstallDirectory(_settings.ReadyOrNotDirectory);
         var gameStatus = gameOk ? "Detected" : "Not detected";
         RailGameStatusText.Text = gameStatus;
+        SetRailStatusIcon(RailGameStatusIcon, gameOk ? RailStatusState.Connected : RailStatusState.Disconnected);
         DashboardGameStatusText.Text = gameStatus;
-        RailNexusStatusText.Text = _lastNexusStatus;
-        DashboardNexusStatusText.Text = string.IsNullOrWhiteSpace(_settings.ApiKey) ? "Missing key" : _lastNexusStatus;
+        var nexusStatus = string.IsNullOrWhiteSpace(_settings.ApiKey) ? "Missing key" : _lastNexusStatus;
+        RailNexusStatusText.Text = nexusStatus;
+        SetRailStatusIcon(RailNexusStatusIcon, GetNexusRailStatus(nexusStatus));
+        DashboardNexusStatusText.Text = nexusStatus;
 
         var summary = DashboardSummaryFactory.Create(CreateManifestStore().Load(), _queue, CreateErrorLogStore().Load());
         InstalledModCountText.Text = summary.InstalledModCount.ToString();
@@ -126,6 +137,32 @@ public partial class MainWindow : Window
         RecentActivityList.ItemsSource = summary.RecentActivity.Count == 0
             ? [new RecentActivityItem(DateTimeOffset.UtcNow, "No recent activity yet")]
             : summary.RecentActivity;
+    }
+
+    private void SetRailStatusIcon(PackIconMaterial icon, RailStatusState status)
+    {
+        icon.Kind = status switch
+        {
+            RailStatusState.Connected => PackIconMaterialKind.CheckCircleOutline,
+            RailStatusState.Disconnected => PackIconMaterialKind.CloseCircleOutline,
+            _ => PackIconMaterialKind.HelpCircleOutline
+        };
+        icon.Foreground = status switch
+        {
+            RailStatusState.Connected => (System.Windows.Media.Brush)FindResource("SuccessBrush"),
+            RailStatusState.Disconnected => (System.Windows.Media.Brush)FindResource("DangerBrush"),
+            _ => (System.Windows.Media.Brush)FindResource("AccentBrush")
+        };
+    }
+
+    private static RailStatusState GetNexusRailStatus(string status)
+    {
+        if (status.StartsWith("Connected", StringComparison.OrdinalIgnoreCase))
+        {
+            return RailStatusState.Connected;
+        }
+
+        return status is "Not tested" ? RailStatusState.Unknown : RailStatusState.Disconnected;
     }
 
     private void ShowPage(FrameworkElement page, string title, string subtitle)
@@ -554,14 +591,18 @@ public partial class MainWindow : Window
                     var selectedEntries = ResolveSelectedArchiveEntries(item);
                     var deployProgress = new Progress<double>(value =>
                         SetProgress((index + Math.Clamp(value, 0, 1)) / total, $"Deploying {itemNumber} of {items.Length}"));
-                    var record = manager.Deploy(new DeploymentRequest(
-                        item.ModName,
-                        item.SourceUrl,
-                        item.ArchivePath,
-                        _settings.ReadyOrNotDirectory,
-                        item.ProfileId,
-                        selectedEntries.Count == 0 ? null : selectedEntries,
-                        deployProgress));
+                    var request = new DeploymentRequest(
+                        ModName: item.ModName,
+                        SourceUrl: item.SourceUrl,
+                        ArchivePath: item.ArchivePath,
+                        ReadyOrNotInstallDirectory: _settings.ReadyOrNotDirectory,
+                        ProfileId: item.ProfileId,
+                        ModId: item.ModId,
+                        FileId: item.FileId,
+                        ExistingInstallId: item.InstallId,
+                        SelectedArchiveEntries: selectedEntries.Count == 0 ? null : selectedEntries,
+                        Progress: deployProgress);
+                    var record = await Task.Run(() => manager.Deploy(request));
                     item.InstallId = record.InstallId;
                     item.SelectedArchiveEntries = record.SelectedArchiveEntries.ToList();
                     item.Status = "Deployed";
@@ -1060,14 +1101,18 @@ public partial class MainWindow : Window
                 var itemIndex = index;
                 var deployProgress = new Progress<double>(value =>
                     SetProgress((itemIndex + Math.Clamp(value, 0, 1)) / total, $"Activating {itemIndex + 1} of {_queue.Count}"));
-                var record = manager.Deploy(new DeploymentRequest(
-                    item.ModName,
-                    item.SourceUrl,
-                    item.ArchivePath,
-                    _settings.ReadyOrNotDirectory,
-                    profile.ProfileId,
-                    item.SelectedArchiveEntries.Count == 0 ? null : item.SelectedArchiveEntries,
-                    deployProgress));
+                var request = new DeploymentRequest(
+                    ModName: item.ModName,
+                    SourceUrl: item.SourceUrl,
+                    ArchivePath: item.ArchivePath,
+                    ReadyOrNotInstallDirectory: _settings.ReadyOrNotDirectory,
+                    ProfileId: profile.ProfileId,
+                    ModId: item.ModId,
+                    FileId: item.FileId,
+                    ExistingInstallId: item.InstallId,
+                    SelectedArchiveEntries: item.SelectedArchiveEntries.Count == 0 ? null : item.SelectedArchiveEntries,
+                    Progress: deployProgress);
+                var record = await Task.Run(() => manager.Deploy(request));
                 item.InstallId = record.InstallId;
                 item.Status = "Deployed";
             }

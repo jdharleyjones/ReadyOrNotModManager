@@ -66,6 +66,13 @@
             <Setter Property="HorizontalGridLinesBrush" Value="#2D3A41"/>
             <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
         </Style>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#D7DEE0"/>
+            <Setter Property="Foreground" Value="#11181C"/>
+            <Setter Property="BorderBrush" Value="#AEB8BA"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
         <Style x:Key="NavButton" TargetType="Button">
             <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
             <Setter Property="MinHeight" Value="44"/>
@@ -178,10 +185,27 @@
                         </Button>
                     </StackPanel>
                     <StackPanel DockPanel.Dock="Bottom">
-                        <TextBlock Text="Game" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
-                        <TextBlock x:Name="RailGameStatusText" Text="Not detected" TextWrapping="Wrap" Margin="0,3,0,12"/>
-                        <TextBlock Text="Nexus" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
-                        <TextBlock x:Name="RailNexusStatusText" Text="Not tested" TextWrapping="Wrap"/>
+                        <TextBlock Text="Connection status" Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="0,0,0,8"/>
+                        <Border Background="#10161A" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,8">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <iconPacks:PackIconMaterial x:Name="RailGameStatusIcon" Kind="HelpCircleOutline" Width="18" Height="18" Foreground="{StaticResource AccentBrush}" Margin="0,1,10,0"/>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Game" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
+                                    <TextBlock x:Name="RailGameStatusText" Text="Unknown" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <Border Background="#10161A" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="10">
+                            <Grid>
+                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                <iconPacks:PackIconMaterial x:Name="RailNexusStatusIcon" Kind="HelpCircleOutline" Width="18" Height="18" Foreground="{StaticResource AccentBrush}" Margin="0,1,10,0"/>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Nexus" Foreground="{StaticResource MutedBrush}" FontSize="11"/>
+                                    <TextBlock x:Name="RailNexusStatusText" Text="Unknown" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -197,10 +221,6 @@
                         <TextBlock x:Name="PageTitleText" Text="Dashboard" FontSize="28" FontWeight="SemiBold"/>
                         <TextBlock x:Name="PageSubtitleText" Text="Ready or Not mod deployment overview" Foreground="{StaticResource MutedBrush}"/>
                     </StackPanel>
-                    <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
-                        <Button Content="Add Nexus URL" Click="DashboardNav_Click" Style="{StaticResource PrimaryButton}"/>
-                        <Button Content="Settings" Click="SettingsNav_Click"/>
-                    </WrapPanel>
                 </DockPanel>
 
                 <Grid Grid.Row="1">
@@ -375,10 +395,10 @@
                     </Grid>
                 </Grid>
 
-                <Border Grid.Row="2" Margin="0,16,0,0" Background="{StaticResource PanelAltBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="12">
+                <Border Grid.Row="2" Margin="0,16,0,0" Background="{StaticResource PanelAltBrush}" BorderBrush="{StaticResource LineBrush}" BorderThickness="1" Padding="14">
                     <DockPanel LastChildFill="True">
-                        <ProgressBar x:Name="OverallProgressBar" DockPanel.Dock="Left" Width="190" Height="12" Minimum="0" Maximum="100" Value="0" Margin="0,0,14,0"/>
-                        <TextBlock x:Name="ProgressText" DockPanel.Dock="Left" Text="" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                        <ProgressBar x:Name="OverallProgressBar" DockPanel.Dock="Left" Width="420" Height="20" Minimum="0" Maximum="100" Value="0" Margin="0,0,16,0"/>
+                        <TextBlock x:Name="ProgressText" DockPanel.Dock="Left" Text="" Foreground="{StaticResource TextBrush}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
                         <TextBlock x:Name="StatusText" Text="Ready" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" TextAlignment="Right"/>
                     </DockPanel>
                 </Border>

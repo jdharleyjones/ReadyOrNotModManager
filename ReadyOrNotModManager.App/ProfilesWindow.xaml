@@ -40,6 +40,13 @@
             <Setter Property="HorizontalGridLinesBrush" Value="#2F3932"/>
             <Setter Property="BorderBrush" Value="{StaticResource LineBrush}"/>
         </Style>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="#D7DEE0"/>
+            <Setter Property="Foreground" Value="#11181C"/>
+            <Setter Property="BorderBrush" Value="#AEB8BA"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,6"/>
+        </Style>
     </Window.Resources>
 
     <Grid Margin="18">

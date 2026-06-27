@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.2.1`
+Version: `1.2.2`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -49,6 +49,8 @@ Use **Advanced options** when you want to choose which `.pak` groups deploy from
 Use **Modpacks** to save the current queue as a local profile, load a profile back into the queue, or activate a profile. Activating a profile uninstalls files tracked for the previously active profile, then deploys the chosen profile's available archives. Profile data and copied archives are stored in the configured modpack library folder.
 
 Long download and deploy operations report overall progress in the bottom status bar. Failed items are skipped so the rest of the queue can continue.
+
+Version 1.2.2 fixes deployment identity so selected manual imports and multiple Nexus files from the same mod page deploy together instead of replacing each other. The sidebar now shows game/Nexus connection status with clear icons, table headers are higher contrast, and deployment work runs in the background so progress can update while archives are copied.
 
 Use **Errors** to review failed download/deploy items. The error page can open the Nexus page, game folder, archive folder, or copy a manual-fix note for the selected failure.
 
