@@ -67,6 +67,7 @@ public partial class MainWindow : Window
             ImportDirectoryBox.Text = _settings.ImportDirectory;
             ProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
             AdvancedOptionsBox.IsChecked = _settings.AdvancedOptionsEnabled;
+            AutoTestNexusOnLaunchBox.IsChecked = _settings.AutoTestNexusOnLaunch;
             ThemeSelector.SelectedValue = ThemeManager.ResolveThemeName(_settings.ThemeName);
             ThemeManager.ApplyTheme(Resources, _settings.ThemeName);
             SetupApiKeyBox.Password = _settings.ApiKey;
@@ -96,6 +97,7 @@ public partial class MainWindow : Window
         ShellRoot.Visibility = Visibility.Visible;
         ShowPage(DashboardPage, "Dashboard", "Ready or Not mod deployment overview");
         _ = CheckForUpdatesAsync();
+        _ = AutoTestNexusConnectionOnLaunchAsync();
     }
 
     private void RefreshShellData()
@@ -242,6 +244,17 @@ public partial class MainWindow : Window
         SetStatus("Settings saved.");
     }
 
+    private async Task AutoTestNexusConnectionOnLaunchAsync()
+    {
+        if (!_settings.AutoTestNexusOnLaunch || string.IsNullOrWhiteSpace(_settings.ApiKey))
+        {
+            return;
+        }
+
+        SetStatus("Testing Nexus connection...", logActivity: false);
+        await ValidateNexusConnectionAsync(_settings.ApiKey);
+    }
+
     private void ThemeSelection_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (_loadingSettings || ThemeSelector.SelectedValue is not string themeName)
@@ -347,15 +360,20 @@ public partial class MainWindow : Window
                 return;
             }
 
-            using var http = new HttpClient();
-            var result = await new NexusClient(http, apiKey).ValidateApiKeyAsync(CancellationToken.None);
-            _lastNexusStatus = result.IsValid
-                ? string.IsNullOrWhiteSpace(result.UserName) ? "Connected" : $"Connected: {result.UserName}"
-                : "Connection failed";
-            SetStatus(result.Message);
-            ValidateSetupFields();
-            RefreshDashboard();
+            await ValidateNexusConnectionAsync(apiKey);
         });
+    }
+
+    private async Task ValidateNexusConnectionAsync(string apiKey)
+    {
+        using var http = new HttpClient();
+        var result = await new NexusClient(http, apiKey).ValidateApiKeyAsync(CancellationToken.None);
+        _lastNexusStatus = result.IsValid
+            ? string.IsNullOrWhiteSpace(result.UserName) ? "Connected" : $"Connected: {result.UserName}"
+            : "Connection failed";
+        SetStatus(result.Message);
+        ValidateSetupFields();
+        RefreshDashboard();
     }
 
     private void AutoDetectGameFolder_Click(object sender, RoutedEventArgs e)
@@ -1066,6 +1084,7 @@ public partial class MainWindow : Window
         ImportDirectoryBox.Text = _settings.ImportDirectory;
         ProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
         AdvancedOptionsBox.IsChecked = false;
+        AutoTestNexusOnLaunchBox.IsChecked = false;
         UrlBox.Clear();
         SetProgress(0, string.Empty);
         LoadSettings();
@@ -1087,6 +1106,7 @@ public partial class MainWindow : Window
             ActiveProfileId = _settings.ActiveProfileId,
             ThemeName = ThemeSelector.SelectedValue as string ?? _settings.ThemeName,
             AdvancedOptionsEnabled = AdvancedOptionsBox.IsChecked == true,
+            AutoTestNexusOnLaunch = AutoTestNexusOnLaunchBox.IsChecked == true,
             SetupCompleted = setupCompleted ?? _settings.SetupCompleted,
             ForceSetupWizard = forceSetupWizard ?? _settings.ForceSetupWizard
         };
@@ -1522,6 +1542,9 @@ public partial class MainWindow : Window
 
     private void SetProgress(double value, string message)
     {
+        ProgressPanel.Visibility = string.IsNullOrWhiteSpace(message) && value <= 0
+            ? Visibility.Collapsed
+            : Visibility.Visible;
         OverallProgressBar.Value = Math.Clamp(value, 0, 1) * 100;
         ProgressText.Text = message;
     }

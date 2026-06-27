@@ -276,6 +276,7 @@ public sealed class CoreBehaviorTests
 
         Assert.False(loaded.SetupCompleted);
         Assert.False(loaded.ForceSetupWizard);
+        Assert.False(loaded.AutoTestNexusOnLaunch);
         Assert.Equal(ThemeManager.DefaultThemeName, loaded.ThemeName);
     }
 
@@ -288,6 +289,17 @@ public sealed class CoreBehaviorTests
         store.Save(new LocalSettings { ThemeName = "hacker" });
 
         Assert.Equal("hacker", store.Load().ThemeName);
+    }
+
+    [Fact]
+    public void LocalSettingsStore_RoundTripsAutoTestNexusOnLaunch()
+    {
+        var directory = CreateTempDirectory();
+        var store = new LocalSettingsStore(directory);
+
+        store.Save(new LocalSettings { AutoTestNexusOnLaunch = true });
+
+        Assert.True(store.Load().AutoTestNexusOnLaunch);
     }
 
     [Fact]
@@ -691,6 +703,7 @@ public sealed class CoreBehaviorTests
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "codex");
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "dark");
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "light");
+        Assert.Contains(ThemeManager.Themes, theme => theme.Name == "purple");
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "hacker");
         Assert.DoesNotContain(ThemeManager.Themes, theme => theme.Name == "chatgpt");
 

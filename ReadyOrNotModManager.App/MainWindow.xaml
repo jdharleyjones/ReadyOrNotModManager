@@ -404,6 +404,7 @@
                             <PasswordBox x:Name="ApiKeyBox"/>
                             <WrapPanel><Button Content="Save settings" Click="SaveSettings_Click" Style="{StaticResource SpecialButton}"/><Button Content="Get API key" Click="OpenApiKeyPage_Click" Style="{StaticResource ActionButton}"/><Button Content="Test Connection" Click="TestConnection_Click" Style="{StaticResource DownloadButton}"/></WrapPanel>
                             <CheckBox x:Name="AdvancedOptionsBox" Content="Advanced options" Foreground="{DynamicResource TextBrush}" Margin="0,8,0,18"/>
+                            <CheckBox x:Name="AutoTestNexusOnLaunchBox" Content="Auto-test Nexus connection on app launch" Foreground="{DynamicResource TextBrush}" Margin="0,0,0,18"/>
 
                             <TextBlock Text="Colour scheme" FontWeight="SemiBold"/>
                             <ComboBox x:Name="ThemeSelector" DisplayMemberPath="DisplayName" SelectedValuePath="Name" SelectionChanged="ThemeSelection_Changed" Margin="0,6,0,16"/>
@@ -455,8 +456,10 @@
 
                 <Border Grid.Row="2" Margin="0,16,0,0" Background="{DynamicResource PanelAltBrush}" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" Padding="14">
                     <DockPanel LastChildFill="True">
-                        <ProgressBar x:Name="OverallProgressBar" DockPanel.Dock="Left" Width="420" Height="20" Minimum="0" Maximum="100" Value="0" Margin="0,0,16,0"/>
-                        <TextBlock x:Name="ProgressText" DockPanel.Dock="Left" Text="" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                        <StackPanel x:Name="ProgressPanel" DockPanel.Dock="Left" Orientation="Horizontal" Visibility="Collapsed">
+                            <ProgressBar x:Name="OverallProgressBar" Width="420" Height="20" Minimum="0" Maximum="100" Value="0" Margin="0,0,16,0"/>
+                            <TextBlock x:Name="ProgressText" Text="" Foreground="{DynamicResource TextBrush}" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                        </StackPanel>
                         <TextBlock x:Name="StatusText" Text="Ready" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center" TextAlignment="Right"/>
                     </DockPanel>
                 </Border>

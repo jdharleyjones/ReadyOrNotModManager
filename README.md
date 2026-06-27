@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.2.6`
+Version: `1.2.7`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -36,7 +36,7 @@ The executable will be written to `publish\win-x64`.
 3. Use the navigation sidebar for Dashboard, Mods, Queue, Modpacks, Downloads, Settings, and Logs/Errors.
 4. Edit API/folder settings later from **Settings**. Use **Reset setup wizard** there to rerun the guided setup flow.
 
-The app stores settings under `%LOCALAPPDATA%\ReadyOrNotModManager`; the API key is protected with Windows user-scope DPAPI. Deployed files are tracked in a local install manifest so selected mods can be uninstalled later.
+The app stores settings, logs, manifests, and queue data under `%LOCALAPPDATA%\ReadyOrNotModManager`; the API key is protected with Windows user-scope DPAPI. These files are local to each Windows user and are not included in the GitHub repository or portable release zip. Deployed files are tracked in a local install manifest so selected mods can be uninstalled later.
 
 The main dashboard shows game detection, Nexus connection, installed mod count, pending queue count, recent activity, and common quick actions. Recent activity includes the same useful status messages shown in the bottom status area, such as added mods, collection imports, archive imports, profile actions, and deployment results.
 
@@ -54,9 +54,9 @@ Use **Modpacks** to save the current queue as a local profile, load a profile ba
 
 Long download and deploy operations report overall progress in the bottom status bar. Failed items are skipped so the rest of the queue can continue.
 
-Version 1.2.6 makes colour schemes visibly repaint the shell, sidebar, panels, inputs, and table surfaces with gradient panel backgrounds. Version 1.2.5 fixed a 1.2.4 startup crash caused by frozen WPF theme brushes. Version 1.2.4 added queue cleanup, persistent colour themes, modpack rename support, dashboard update status, a polished Downloads WIP marker, and dashboard quick-action layout improvements.
+Version 1.2.7 hides the progress bar until work is running, adds an optional automatic Nexus API test on launch, and adds a purple gradient theme. Version 1.2.6 makes colour schemes visibly repaint the shell, sidebar, panels, inputs, and table surfaces with gradient panel backgrounds. Version 1.2.5 fixed a 1.2.4 startup crash caused by frozen WPF theme brushes. Version 1.2.4 added queue cleanup, persistent colour themes, modpack rename support, dashboard update status, a polished Downloads WIP marker, and dashboard quick-action layout improvements.
 
-Use the **Colour scheme** selector in Settings to switch between Tactical default, Dark mode, Light mode, Claude palette, Codex palette, and Hacker themes. The selected theme is saved locally and applied on future launches.
+Use the **Colour scheme** selector in Settings to switch between Tactical default, Dark mode, Light mode, Claude palette, Codex palette, Purple gradient, and Hacker themes. The selected theme is saved locally and applied on future launches.
 
 Use **Errors** to review failed download/deploy items. The error page can open the Nexus page, game folder, archive folder, or copy a manual-fix note for the selected failure.
 

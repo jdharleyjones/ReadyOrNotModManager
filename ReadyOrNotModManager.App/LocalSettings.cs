@@ -15,6 +15,7 @@ public sealed class LocalSettings
     public string ActiveProfileId { get; set; } = string.Empty;
     public string ThemeName { get; set; } = Services.ThemeManager.DefaultThemeName;
     public bool AdvancedOptionsEnabled { get; set; }
+    public bool AutoTestNexusOnLaunch { get; set; }
     public bool SetupCompleted { get; set; }
     public bool ForceSetupWizard { get; set; }
 }
@@ -48,6 +49,7 @@ public sealed class LocalSettingsStore
             ActiveProfileId = dto.ActiveProfileId ?? string.Empty,
             ThemeName = Services.ThemeManager.ResolveThemeName(dto.ThemeName),
             AdvancedOptionsEnabled = dto.AdvancedOptionsEnabled,
+            AutoTestNexusOnLaunch = dto.AutoTestNexusOnLaunch,
             SetupCompleted = dto.SetupCompleted,
             ForceSetupWizard = dto.ForceSetupWizard
         };
@@ -65,6 +67,7 @@ public sealed class LocalSettingsStore
             ActiveProfileId = settings.ActiveProfileId,
             ThemeName = Services.ThemeManager.ResolveThemeName(settings.ThemeName),
             AdvancedOptionsEnabled = settings.AdvancedOptionsEnabled,
+            AutoTestNexusOnLaunch = settings.AutoTestNexusOnLaunch,
             SetupCompleted = settings.SetupCompleted,
             ForceSetupWizard = settings.ForceSetupWizard
         };
@@ -122,6 +125,7 @@ public sealed class LocalSettingsStore
         public string? ActiveProfileId { get; set; }
         public string? ThemeName { get; set; }
         public bool AdvancedOptionsEnabled { get; set; }
+        public bool AutoTestNexusOnLaunch { get; set; }
         public bool SetupCompleted { get; set; }
         public bool ForceSetupWizard { get; set; }
     }

@@ -1,5 +1,12 @@
 # Release Notes
 
+## 1.2.7
+
+- Hide the progress bar until an operation reports progress.
+- Add a Purple gradient colour scheme.
+- Add a Settings checkbox to auto-test the Nexus API connection on app launch.
+- Document that API keys, logs, queue data, settings, and manifests are local user data and are not shipped in GitHub release zips.
+
 ## 1.2.6
 
 - Make Settings colour schemes visibly repaint the app instead of only saving the selected option.
