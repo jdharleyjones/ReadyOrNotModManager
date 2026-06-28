@@ -290,6 +290,11 @@
                     <ControlTemplate TargetType="ComboBox">
                         <Grid>
                             <ToggleButton x:Name="ToggleButton" Focusable="False" IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press" Background="Transparent" BorderThickness="0">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <ContentPresenter/>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
                                 <Border x:Name="Chrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7" Padding="{TemplateBinding Padding}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -464,7 +469,7 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
                 <DockPanel Margin="0,0,0,16">
-                    <StackPanel>
+                    <StackPanel x:Name="PageHeaderPanel">
                         <TextBlock x:Name="PageTitleText" Text="Dashboard" FontSize="34" FontWeight="SemiBold"/>
                         <TextBlock x:Name="PageSubtitleText" Text="Ready or Not mod deployment overview" Foreground="{DynamicResource MutedBrush}" FontSize="14"/>
                     </StackPanel>

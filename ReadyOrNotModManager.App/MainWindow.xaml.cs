@@ -254,6 +254,10 @@ public partial class MainWindow : Window
         page.BeginAnimation(OpacityProperty, new System.Windows.Media.Animation.DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(150)));
         PageTitleText.Text = title;
         PageSubtitleText.Text = subtitle;
+        var centeredHeader = page == SettingsPage;
+        PageHeaderPanel.HorizontalAlignment = centeredHeader ? System.Windows.HorizontalAlignment.Center : System.Windows.HorizontalAlignment.Left;
+        PageTitleText.TextAlignment = centeredHeader ? TextAlignment.Center : TextAlignment.Left;
+        PageSubtitleText.TextAlignment = centeredHeader ? TextAlignment.Center : TextAlignment.Left;
         SetActiveNavigation(page);
         RefreshShellData();
     }

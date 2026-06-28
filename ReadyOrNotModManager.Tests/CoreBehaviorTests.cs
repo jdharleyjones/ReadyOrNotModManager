@@ -823,6 +823,14 @@ public sealed class CoreBehaviorTests
     }
 
     [Fact]
+    public void AppTheme_ToStringUsesDisplayNameForComboBoxFallback()
+    {
+        var theme = ThemeManager.GetTheme("purple");
+
+        Assert.Equal("Purple gradient", theme.ToString());
+    }
+
+    [Fact]
     public async Task AppUpdateChecker_ReportsUpToDateAndAvailableAndUnavailable()
     {
         var current = new Version(1, 2, 4, 0);

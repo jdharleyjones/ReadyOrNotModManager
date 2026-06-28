@@ -21,7 +21,13 @@ public sealed record AppTheme(
     MediaColor Accent,
     MediaColor Blue,
     MediaColor Danger,
-    MediaColor Success);
+    MediaColor Success)
+{
+    public override string ToString()
+    {
+        return DisplayName;
+    }
+}
 
 public static class ThemeManager
 {

@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.3.5
+
+- Fix the Utilities modpack export dropdown so its disabled/empty state stays dark and transparent.
+- Center the Settings page title and subtitle with the rest of the Settings controls.
+- Show colour scheme display names instead of full `AppTheme` record text in dropdowns.
+
 ## 1.3.4
 
 - Rename Extras to Utilities in the sidebar and page title.
