@@ -985,7 +985,7 @@ public sealed class CoreBehaviorTests
     public void ReadyOrNotLauncher_FallsBackToDirectExecutable()
     {
         var root = CreateTempDirectory();
-        var executable = Path.Combine(root, "ReadyOrNot", "Binaries", "Win64", "ReadyOrNot-Win64-Shipping.exe");
+        var executable = Path.Combine(root, "ReadyOrNot", "Binaries", "Win64", "ReadyOrNotSteam-Win64-Shipping.exe");
         Directory.CreateDirectory(Path.GetDirectoryName(executable)!);
         File.WriteAllText(executable, string.Empty);
 
@@ -1001,13 +1001,28 @@ public sealed class CoreBehaviorTests
     public void ReadyOrNotLauncher_FindsDirectExecutableForWindowIcon()
     {
         var root = CreateTempDirectory();
-        var executable = Path.Combine(root, "ReadyOrNot", "Binaries", "Win64", "ReadyOrNot-Win64-Shipping.exe");
+        var executable = Path.Combine(root, "ReadyOrNot", "Binaries", "Win64", "ReadyOrNotSteam-Win64-Shipping.exe");
         Directory.CreateDirectory(Path.GetDirectoryName(executable)!);
         File.WriteAllText(executable, string.Empty);
 
         var result = ReadyOrNotLauncher.FindDirectExecutable(root);
 
         Assert.Equal(executable, result);
+    }
+
+    [Fact]
+    public void ReadyOrNotLauncher_PrefersSteamShippingExecutableOverLegacyExecutable()
+    {
+        var root = CreateTempDirectory();
+        var steamExecutable = Path.Combine(root, "ReadyOrNot", "Binaries", "Win64", "ReadyOrNotSteam-Win64-Shipping.exe");
+        var legacyExecutable = Path.Combine(root, "ReadyOrNot", "Binaries", "Win64", "ReadyOrNot-Win64-Shipping.exe");
+        Directory.CreateDirectory(Path.GetDirectoryName(steamExecutable)!);
+        File.WriteAllText(steamExecutable, string.Empty);
+        File.WriteAllText(legacyExecutable, string.Empty);
+
+        var result = ReadyOrNotLauncher.FindDirectExecutable(root);
+
+        Assert.Equal(steamExecutable, result);
     }
 
     [Fact]

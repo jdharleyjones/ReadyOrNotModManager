@@ -338,6 +338,35 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <Style x:Key="RailHelpButton" TargetType="Button">
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+            <Setter Property="Background" Value="#66101922"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="HelpChrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="19">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="HelpChrome" Property="Background" Value="#88304B5B"/>
+                                <Setter TargetName="HelpChrome" Property="BorderBrush" Value="{DynamicResource BlueBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="HelpChrome" Property="Background" Value="#AA203846"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Grid Background="{DynamicResource ShellBrush}">
@@ -458,6 +487,9 @@
                                 </StackPanel>
                             </Grid>
                         </Border>
+                        <Button Style="{StaticResource RailHelpButton}" Click="ShowHelp_Click" Margin="0,14,0,0" ToolTip="Help">
+                            <iconPacks:PackIconMaterial Kind="Help" Width="20" Height="20"/>
+                        </Button>
                     </StackPanel>
                 </DockPanel>
             </Border>
@@ -889,6 +921,35 @@
                     </DockPanel>
                 </Border>
             </Grid>
+        </Grid>
+
+        <Grid x:Name="HelpOverlay" Visibility="Collapsed" Background="#AA03070C">
+            <Border Style="{StaticResource CardBorderStyle}" Width="560" MaxWidth="720" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Left">
+                            <TextBlock Text="How to use Ready Or Not Mod Manager" FontSize="24" FontWeight="SemiBold"/>
+                            <TextBlock Text="A quick guide for the normal mod workflow." Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <Button Content="Close" DockPanel.Dock="Right" Click="CloseHelp_Click" Style="{StaticResource ActionButton}" Margin="18,0,0,0"/>
+                    </DockPanel>
+                    <StackPanel Grid.Row="1" Margin="0,22,0,0">
+                        <TextBlock Text="1. Complete Setup with your Nexus API key and Ready or Not install folder." TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <TextBlock Text="2. Use Mods to add Nexus mod or collection URLs, or use Utilities to import archives and shared modpack files." TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <TextBlock Text="3. Download missing queue items, then deploy downloaded mods into ReadyOrNot\\Content\\Paks." TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <TextBlock Text="4. Save deployed mods as Modpacks when you want to switch between different setups later." TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <TextBlock Text="5. Check Logs/Errors if a mod fails. The app skips failed items so the rest of the queue can continue." TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <Border Grid.Row="2" Background="#44101922" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,22,0,0">
+                        <TextBlock Text="Tip: downloads, API keys, logs, and modpack settings are stored locally on this PC. Shared modpack exports contain links only, not archive files." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
+                    </Border>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </Window>

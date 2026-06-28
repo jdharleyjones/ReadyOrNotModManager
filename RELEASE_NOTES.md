@@ -1,5 +1,10 @@
 # Release Notes
 
+## 1.3.7
+
+- Add a bottom-left sidebar help button with a short in-app usage guide.
+- Prefer `ReadyOrNotSteam-Win64-Shipping.exe` when extracting the local Ready or Not icon or resolving a direct launch fallback.
+
 ## 1.3.6
 
 - Fix the Utilities modpack export dropdown so saved modpacks show their profile names instead of the `ModProfile` type name.

@@ -15,6 +15,7 @@ public static class ReadyOrNotLauncher
 
     private static readonly string[] ExecutableCandidates =
     [
+        Path.Combine("ReadyOrNot", "Binaries", "Win64", "ReadyOrNotSteam-Win64-Shipping.exe"),
         Path.Combine("ReadyOrNot", "Binaries", "Win64", "ReadyOrNot-Win64-Shipping.exe"),
         Path.Combine("ReadyOrNot", "Binaries", "Win64", "ReadyOrNot.exe"),
         "ReadyOrNot.exe"

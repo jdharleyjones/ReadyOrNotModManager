@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using MahApps.Metro.IconPacks;
 using ReadyOrNotModManager.Core.Archives;
@@ -63,6 +64,7 @@ public partial class MainWindow : Window
         LoadSettings();
         RefreshShellData();
         ShowInitialView();
+        PreviewKeyDown += MainWindow_PreviewKeyDown;
     }
 
     private void LoadSettings()
@@ -399,6 +401,26 @@ public partial class MainWindow : Window
     {
         OpenUrl(ReadyOrNotNexusCollectionsPage);
         SetStatus("Opened Ready or Not Nexus collections page.");
+    }
+
+    private void ShowHelp_Click(object sender, RoutedEventArgs e)
+    {
+        HelpOverlay.Visibility = Visibility.Visible;
+        SetStatus("Opened help guide.", logActivity: false);
+    }
+
+    private void CloseHelp_Click(object sender, RoutedEventArgs e)
+    {
+        HelpOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape && HelpOverlay.Visibility == Visibility.Visible)
+        {
+            HelpOverlay.Visibility = Visibility.Collapsed;
+            e.Handled = true;
+        }
     }
 
     private void ShowLocalModpacks_Click(object sender, RoutedEventArgs e)
