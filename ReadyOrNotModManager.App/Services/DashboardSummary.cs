@@ -28,7 +28,7 @@ public static class DashboardSummaryFactory
             .Select(entry => new RecentActivityItem(entry.TimestampUtc, $"{entry.Operation} failed for {entry.ModName}"))
             .Concat(manifest.Records.Select(record => new RecentActivityItem(record.InstalledAtUtc, $"{record.ModName} deployed"))))
             .OrderByDescending(item => item.TimestampUtc)
-            .Take(8)
+            .Take(6)
             .ToArray();
 
         return new DashboardSummary(manifest.Records.Count, pending, activity);

@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.3.8
+
+- Replace the bundled app icon with a cleaner ImageMagick-generated tactical headset icon based on `new.png`.
+- Keep the bundled app icon as the default window/titlebar/executable icon instead of overriding it with the Ready or Not game executable icon.
+- Add recent UI polish for the custom titlebar, sidebar brand divider, dashboard activity fit, and support/social links popup.
+
 ## 1.3.7
 
 - Add a bottom-left sidebar help button with a short in-app usage guide.

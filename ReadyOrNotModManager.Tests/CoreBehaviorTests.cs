@@ -785,12 +785,14 @@ public sealed class CoreBehaviorTests
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "claude");
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "codex");
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "dark");
-        Assert.Contains(ThemeManager.Themes, theme => theme.Name == "light");
+        Assert.Contains(ThemeManager.Themes, theme => theme.Name == "red" && theme.DisplayName == "Red gradient");
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "purple");
         Assert.Contains(ThemeManager.Themes, theme => theme.Name == "hacker");
+        Assert.DoesNotContain(ThemeManager.Themes, theme => theme.Name == "light");
         Assert.DoesNotContain(ThemeManager.Themes, theme => theme.Name == "chatgpt");
 
         Assert.Equal(ThemeManager.DefaultThemeName, ThemeManager.ResolveThemeName("missing"));
+        Assert.Equal("red", ThemeManager.ResolveThemeName("light"));
     }
 
     [Fact]

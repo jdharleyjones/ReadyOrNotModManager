@@ -65,6 +65,8 @@ public partial class MainWindow : Window
         RefreshShellData();
         ShowInitialView();
         PreviewKeyDown += MainWindow_PreviewKeyDown;
+        StateChanged += MainWindow_StateChanged;
+        UpdateWindowChromeState();
     }
 
     private void LoadSettings()
@@ -88,7 +90,7 @@ public partial class MainWindow : Window
             SetupImportDirectoryBox.Text = _settings.ImportDirectory;
             SetupProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
             ValidateSetupFields();
-            ApplyPreferredWindowIcon();
+            ApplyApplicationWindowIcon();
         }
         finally
         {
@@ -403,8 +405,61 @@ public partial class MainWindow : Window
         SetStatus("Opened Ready or Not Nexus collections page.");
     }
 
+    private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount == 2)
+        {
+            ToggleWindowMaximize();
+            return;
+        }
+
+        if (e.ButtonState == MouseButtonState.Pressed)
+        {
+            DragMove();
+        }
+    }
+
+    private void MinimizeWindow_Click(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void MaximizeRestoreWindow_Click(object sender, RoutedEventArgs e)
+    {
+        ToggleWindowMaximize();
+    }
+
+    private void CloseWindow_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+
+    private void MainWindow_StateChanged(object? sender, EventArgs e)
+    {
+        UpdateWindowChromeState();
+    }
+
+    private void ToggleWindowMaximize()
+    {
+        WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+    }
+
+    private void UpdateWindowChromeState()
+    {
+        MaximizeRestoreIcon.Kind = WindowState == WindowState.Maximized
+            ? PackIconMaterialKind.WindowRestore
+            : PackIconMaterialKind.WindowMaximize;
+        WindowFrame.CornerRadius = WindowState == WindowState.Maximized
+            ? new CornerRadius(0)
+            : new CornerRadius(12);
+        DashboardPage.VerticalScrollBarVisibility = WindowState == WindowState.Maximized
+            ? ScrollBarVisibility.Hidden
+            : ScrollBarVisibility.Auto;
+    }
+
     private void ShowHelp_Click(object sender, RoutedEventArgs e)
     {
+        SocialsOverlay.Visibility = Visibility.Collapsed;
         HelpOverlay.Visibility = Visibility.Visible;
         SetStatus("Opened help guide.", logActivity: false);
     }
@@ -414,11 +469,42 @@ public partial class MainWindow : Window
         HelpOverlay.Visibility = Visibility.Collapsed;
     }
 
+    private void ShowSocials_Click(object sender, RoutedEventArgs e)
+    {
+        HelpOverlay.Visibility = Visibility.Collapsed;
+        SocialsOverlay.Visibility = Visibility.Visible;
+        SetStatus("Opened support and socials.", logActivity: false);
+    }
+
+    private void CloseSocials_Click(object sender, RoutedEventArgs e)
+    {
+        SocialsOverlay.Visibility = Visibility.Collapsed;
+    }
+
+    private void OpenGithub_Click(object sender, RoutedEventArgs e)
+    {
+        OpenUrl("https://github.com/jdharleyjones/");
+        SetStatus("Opened GitHub support page.");
+    }
+
+    private void OpenInstagram_Click(object sender, RoutedEventArgs e)
+    {
+        OpenUrl("https://www.instagram.com/cyb3r.sk4ter/");
+        SetStatus("Opened Instagram support page.");
+    }
+
+    private void CopyDiscord_Click(object sender, RoutedEventArgs e)
+    {
+        System.Windows.Clipboard.SetText("inconspicuousjawa");
+        SetStatus("Copied Discord username: inconspicuousjawa");
+    }
+
     private void MainWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if (e.Key == Key.Escape && HelpOverlay.Visibility == Visibility.Visible)
+        if (e.Key == Key.Escape && (HelpOverlay.Visibility == Visibility.Visible || SocialsOverlay.Visibility == Visibility.Visible))
         {
             HelpOverlay.Visibility = Visibility.Collapsed;
+            SocialsOverlay.Visibility = Visibility.Collapsed;
             e.Handled = true;
         }
     }
@@ -1353,12 +1439,12 @@ public partial class MainWindow : Window
         _settingsStore.Save(_settings);
         ValidateSetupFields();
         RefreshDashboard();
-        ApplyPreferredWindowIcon();
+        ApplyApplicationWindowIcon();
     }
 
-    private void ApplyPreferredWindowIcon()
+    private void ApplyApplicationWindowIcon()
     {
-        var icon = WindowIconProvider.LoadPreferredIcon(_settings.ReadyOrNotDirectory);
+        var icon = WindowIconProvider.LoadApplicationIcon();
         if (icon is not null)
         {
             Icon = icon;

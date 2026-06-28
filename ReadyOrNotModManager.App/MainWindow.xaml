@@ -3,9 +3,18 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         xmlns:services="clr-namespace:ReadyOrNotModManager.App.Services"
-        Title="Ready or Not Mod Manager" Height="820" Width="1320" MinHeight="720" MinWidth="1080"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:syswin="clr-namespace:System.Windows;assembly=PresentationFramework"
+        Title="----==[ Ready Or Not Mod Manager : By InconspicuousJawa ]==----" Height="820" Width="1320" MinHeight="720" MinWidth="1080"
         WindowState="Maximized"
-        Background="{DynamicResource ShellBrush}">
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        MaxHeight="{x:Static syswin:SystemParameters.MaximizedPrimaryScreenHeight}"
+        MaxWidth="{x:Static syswin:SystemParameters.MaximizedPrimaryScreenWidth}"
+        Background="Transparent">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="12" GlassFrameThickness="0" UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
     <Window.Resources>
         <LinearGradientBrush x:Key="ShellBrush" StartPoint="0,0" EndPoint="1,1">
             <GradientStop Color="#0E1113" Offset="0"/>
@@ -338,6 +347,54 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
+        <Style TargetType="ScrollBar">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid x:Name="ScrollRoot" Background="Transparent" Width="18" SnapsToDevicePixels="True">
+                            <Border x:Name="ScrollTrackChrome" Background="#44101922" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" CornerRadius="8" Margin="2"/>
+                            <Track x:Name="PART_Track" Margin="2" IsDirectionReversed="True">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static ScrollBar.PageUpCommand}" Opacity="0" Focusable="False" IsHitTestVisible="False"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="ScrollThumb" MinHeight="128" MinWidth="14" Background="{DynamicResource PanelAltBrush}" BorderBrush="{DynamicResource BlueBrush}">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="{TemplateBinding BorderBrush}" CornerRadius="9" Margin="1">
+                                                    <Border x:Name="ThumbChrome" Background="{TemplateBinding Background}" CornerRadius="8" Margin="1"/>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ThumbChrome" Property="Background" Value="{DynamicResource RailBrush}"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static ScrollBar.PageDownCommand}" Opacity="0" Focusable="False" IsHitTestVisible="False"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter TargetName="ScrollRoot" Property="Width" Value="Auto"/>
+                                <Setter TargetName="ScrollRoot" Property="Height" Value="18"/>
+                                <Setter TargetName="ScrollTrackChrome" Property="Margin" Value="2"/>
+                                <Setter TargetName="PART_Track" Property="IsDirectionReversed" Value="False"/>
+                                <Setter TargetName="ScrollThumb" Property="MinHeight" Value="14"/>
+                                <Setter TargetName="ScrollThumb" Property="MinWidth" Value="128"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
         <Style x:Key="RailHelpButton" TargetType="Button">
             <Setter Property="Width" Value="38"/>
             <Setter Property="Height" Value="38"/>
@@ -367,9 +424,74 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="WindowCaptionButton" TargetType="Button">
+            <Setter Property="Width" Value="42"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource MutedBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="CaptionChrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="CaptionChrome" Property="Background" Value="#552D3F4A"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="CaptionChrome" Property="Background" Value="#77394B55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="CloseCaptionButton" TargetType="Button" BasedOn="{StaticResource WindowCaptionButton}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource DangerBrush}"/>
+                    <Setter Property="Foreground" Value="#FFFFFFFF"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
-    <Grid Background="{DynamicResource ShellBrush}">
+    <Border x:Name="WindowFrame" Background="{DynamicResource ShellBrush}" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" CornerRadius="12" ClipToBounds="True">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="36"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid x:Name="CustomTitleBar" Background="{DynamicResource RailBrush}" MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="12,0,0,0">
+                <Image Source="{Binding Icon, RelativeSource={RelativeSource AncestorType=Window}}" Width="16" Height="16" Margin="0,0,9,0"/>
+            </StackPanel>
+            <TextBlock Text="----===[   Ready Or Not Mod Manager : By InconspicuousJawa   ]===----"
+                       FontSize="12"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource MutedBrush}"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center"
+                       TextTrimming="CharacterEllipsis"
+                       IsHitTestVisible="False"/>
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0">
+                <Button Style="{StaticResource WindowCaptionButton}" Click="MinimizeWindow_Click" ToolTip="Minimize">
+                    <iconPacks:PackIconMaterial Kind="WindowMinimize" Width="15" Height="15"/>
+                </Button>
+                <Button Style="{StaticResource WindowCaptionButton}" Click="MaximizeRestoreWindow_Click" ToolTip="Maximize">
+                    <iconPacks:PackIconMaterial x:Name="MaximizeRestoreIcon" Kind="WindowMaximize" Width="15" Height="15"/>
+                </Button>
+                <Button Style="{StaticResource CloseCaptionButton}" Click="CloseWindow_Click" ToolTip="Close">
+                    <iconPacks:PackIconMaterial Kind="Close" Width="16" Height="16"/>
+                </Button>
+            </StackPanel>
+        </Grid>
+    <Grid Grid.Row="1" Background="{DynamicResource ShellBrush}">
         <Rectangle Fill="{StaticResource GlowBlueBrush}" IsHitTestVisible="False"/>
         <Rectangle Fill="{StaticResource GlowAmberBrush}" IsHitTestVisible="False"/>
         <Rectangle Fill="{StaticResource VignetteBrush}" IsHitTestVisible="False"/>
@@ -439,10 +561,17 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Border Background="#D4141B21" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,1,0" Padding="18">
-                <DockPanel LastChildFill="True">
-                    <StackPanel DockPanel.Dock="Top">
-                        <TextBlock Text="Ready Or Not" FontSize="25" FontWeight="SemiBold"/>
-                        <TextBlock Text="MOD CONTROL" Style="{StaticResource SectionEyebrow}" Margin="0,0,0,26"/>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="58"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Text="Ready Or Not" FontSize="25" FontWeight="Bold"/>
+                        <TextBlock Text="MOD CONTROL" Style="{StaticResource SectionEyebrow}" Margin="0,0,0,14"/>
+                        <Border Height="1" Background="{DynamicResource CardBorderBrush}" Opacity="0.9" Margin="0,0,0,22"/>
                         <Button x:Name="DashboardNavButton" Style="{StaticResource NavButton}" Click="DashboardNav_Click">
                             <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="ViewDashboardOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Dashboard"/></StackPanel>
                         </Button>
@@ -462,36 +591,41 @@
                             <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="AlertCircleOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Logs/Errors"/></StackPanel>
                         </Button>
                     </StackPanel>
-                    <StackPanel DockPanel.Dock="Bottom">
-                        <Button x:Name="SettingsNavButton" Style="{StaticResource NavButton}" Click="SettingsNav_Click" Margin="0,0,0,14">
-                            <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="CogOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Settings"/></StackPanel>
-                        </Button>
-                        <TextBlock Text="CONNECTION STATUS" Style="{StaticResource SectionEyebrow}" Margin="0,0,0,8"/>
-                        <Border Style="{StaticResource CardBorderStyle}" Padding="10" Margin="0,0,0,8">
-                            <Grid>
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                <iconPacks:PackIconMaterial x:Name="RailGameStatusIcon" Kind="HelpCircleOutline" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" Margin="0,1,9,0"/>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Game" Foreground="{DynamicResource MutedBrush}" FontSize="11"/>
-                                    <TextBlock x:Name="RailGameStatusText" Text="Unknown" TextWrapping="Wrap" FontWeight="SemiBold"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                        <Border Style="{StaticResource CardBorderStyle}" Padding="10">
-                            <Grid>
-                                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                <iconPacks:PackIconMaterial x:Name="RailNexusStatusIcon" Kind="HelpCircleOutline" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" Margin="0,1,9,0"/>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="Nexus" Foreground="{DynamicResource MutedBrush}" FontSize="11"/>
-                                    <TextBlock x:Name="RailNexusStatusText" Text="Unknown" TextWrapping="Wrap" FontWeight="SemiBold"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                        <Button Style="{StaticResource RailHelpButton}" Click="ShowHelp_Click" Margin="0,14,0,0" ToolTip="Help">
-                            <iconPacks:PackIconMaterial Kind="Help" Width="20" Height="20"/>
-                        </Button>
-                    </StackPanel>
-                </DockPanel>
+                        <StackPanel Grid.Row="2" Margin="0,0,0,16">
+                            <Button x:Name="SettingsNavButton" Style="{StaticResource NavButton}" Click="SettingsNav_Click" Margin="0,0,0,14">
+                                <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="CogOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Settings"/></StackPanel>
+                            </Button>
+                            <TextBlock Text="CONNECTION STATUS" Style="{StaticResource SectionEyebrow}" Margin="0,0,0,8"/>
+                            <Border Style="{StaticResource CardBorderStyle}" Padding="10" Margin="0,0,0,8">
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <iconPacks:PackIconMaterial x:Name="RailGameStatusIcon" Kind="HelpCircleOutline" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" Margin="0,1,9,0"/>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Game" Foreground="{DynamicResource MutedBrush}" FontSize="11"/>
+                                        <TextBlock x:Name="RailGameStatusText" Text="Unknown" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <Border Style="{StaticResource CardBorderStyle}" Padding="10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <iconPacks:PackIconMaterial x:Name="RailNexusStatusIcon" Kind="HelpCircleOutline" Width="16" Height="16" Foreground="{DynamicResource AccentBrush}" Margin="0,1,9,0"/>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="Nexus" Foreground="{DynamicResource MutedBrush}" FontSize="11"/>
+                                        <TextBlock x:Name="RailNexusStatusText" Text="Unknown" TextWrapping="Wrap" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" VerticalAlignment="Bottom">
+                            <Button Style="{StaticResource RailHelpButton}" Click="ShowHelp_Click" ToolTip="Help">
+                                <iconPacks:PackIconMaterial Kind="Help" Width="20" Height="20"/>
+                            </Button>
+                            <Button Style="{StaticResource RailHelpButton}" Click="ShowSocials_Click" ToolTip="Support and socials" Margin="8,0,0,0">
+                                <iconPacks:PackIconMaterial Kind="ShareVariantOutline" Width="19" Height="19"/>
+                            </Button>
+                        </StackPanel>
+                </Grid>
             </Border>
 
             <Grid Grid.Column="1" Margin="24">
@@ -936,7 +1070,9 @@
                             <TextBlock Text="How to use Ready Or Not Mod Manager" FontSize="24" FontWeight="SemiBold"/>
                             <TextBlock Text="A quick guide for the normal mod workflow." Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0"/>
                         </StackPanel>
-                        <Button Content="Close" DockPanel.Dock="Right" Click="CloseHelp_Click" Style="{StaticResource ActionButton}" Margin="18,0,0,0"/>
+                        <Button DockPanel.Dock="Right" Click="CloseHelp_Click" Style="{StaticResource RailHelpButton}" Margin="18,0,0,0" ToolTip="Close help" HorizontalAlignment="Right">
+                            <iconPacks:PackIconMaterial Kind="Close" Width="18" Height="18"/>
+                        </Button>
                     </DockPanel>
                     <StackPanel Grid.Row="1" Margin="0,22,0,0">
                         <TextBlock Text="1. Complete Setup with your Nexus API key and Ready or Not install folder." TextWrapping="Wrap" Margin="0,0,0,10"/>
@@ -951,5 +1087,56 @@
                 </Grid>
             </Border>
         </Grid>
+
+        <Grid x:Name="SocialsOverlay" Visibility="Collapsed" Background="#AA03070C">
+            <Border Style="{StaticResource CardBorderStyle}" Width="540" MaxWidth="700" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Left">
+                            <TextBlock Text="Support / Socials" FontSize="24" FontWeight="SemiBold"/>
+                            <TextBlock Text="Report bugs, request help, or get in contact." Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,0"/>
+                        </StackPanel>
+                        <Button DockPanel.Dock="Right" Click="CloseSocials_Click" Style="{StaticResource RailHelpButton}" Margin="18,0,0,0" ToolTip="Close socials" HorizontalAlignment="Right">
+                            <iconPacks:PackIconMaterial Kind="Close" Width="18" Height="18"/>
+                        </Button>
+                    </DockPanel>
+
+                    <UniformGrid Grid.Row="1" Columns="3" Margin="0,24,0,0">
+                        <Button Click="OpenGithub_Click" Style="{StaticResource ActionButton}" Padding="14" Margin="0,0,10,0" ToolTip="Open GitHub">
+                            <StackPanel>
+                                <iconPacks:PackIconMaterial Kind="CodeBraces" Width="26" Height="26" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <TextBlock Text="GitHub" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="jdharleyjones" Foreground="{DynamicResource MutedBrush}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Click="OpenInstagram_Click" Style="{StaticResource SpecialButton}" Padding="14" Margin="5,0,5,0" ToolTip="Open Instagram">
+                            <StackPanel>
+                                <iconPacks:PackIconMaterial Kind="CameraOutline" Width="26" Height="26" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <TextBlock Text="Instagram" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="cyb3r.sk4ter" Foreground="{DynamicResource MutedBrush}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Click="CopyDiscord_Click" Style="{StaticResource PrimaryButton}" Padding="14" Margin="10,0,0,0" ToolTip="Copy Discord username">
+                            <StackPanel>
+                                <iconPacks:PackIconMaterial Kind="ForumOutline" Width="26" Height="26" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                <TextBlock Text="Discord" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="inconspicuousjawa" Foreground="{DynamicResource MutedBrush}" FontSize="11" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Button>
+                    </UniformGrid>
+
+                    <Border Grid.Row="2" Background="#44101922" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,22,0,0">
+                        <TextBlock Text="Discord handles do not have a reliable public profile link, so the Discord card copies the username to your clipboard." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
+    </Grid>
+    </Border>
 </Window>
