@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.3.2`
+Version: `1.3.3`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -33,7 +33,7 @@ The executable will be written to `publish\win-x64`.
    - Use **Test Connection** to validate the key.
    - Use **Auto-detect Game Folder** or choose the Ready or Not install folder manually.
 2. Use the dashboard quick actions to add Nexus URLs, import archives, deploy all downloaded queue items, open mod folders, show modpacks, or run the game.
-3. Use the navigation sidebar for Dashboard, Installed, Mods, Modpacks, Downloads, Settings, and Logs/Errors.
+3. Use the navigation sidebar for Dashboard, Installed, Mods, Modpacks, Extras, Settings, and Logs/Errors.
 4. Edit API/folder settings later from **Settings**. Use **Reset setup wizard** there to rerun the guided setup flow.
 
 The app stores settings, logs, manifests, and queue data under `%LOCALAPPDATA%\ReadyOrNotModManager`; the API key is protected with Windows user-scope DPAPI. These files are local to each Windows user and are not included in the GitHub repository or portable release zip. Deployed files are tracked in a local install manifest so selected mods can be uninstalled later.
@@ -52,9 +52,11 @@ Use **Advanced options** when you want to choose which `.pak` groups deploy from
 
 Use **Modpacks** to save the currently installed/deployed mods as a local profile, load a profile back into the queue, rename a modpack from the right-click menu, or activate a profile. Activating a profile uninstalls files tracked for the previously active profile, then deploys the chosen profile's available archives. Profile data and copied archives are stored in the configured modpack library folder.
 
+Use **Extras** to export a saved modpack as a `.ronmodpack.json` link file or import one from another user. These files contain Nexus mod links and IDs only, not downloaded archives, API keys, deployed files, or local folders. Imported modpacks are saved locally and loaded into the Mods queue so the receiving user can download the same mods with their own Nexus account.
+
 Long download and deploy operations report overall progress in the bottom status bar. Failed items are skipped so the rest of the queue can continue.
 
-Version 1.3.2 makes **Show Local Modpacks** open both the local modpack folder and the in-app Modpacks page, moves Nexus dashboard links beside Run Game on the right, adds a search watermark on the Mods page, and improves themed dropdown text contrast. Version 1.3.1 polishes the dashboard cards, darkens themed dropdowns, adds direct Nexus Mods and Collections dashboard links, and changes modpack saves/updates to snapshot only installed manifest records.
+Version 1.3.3 adds clickable App Version refresh checks and Extras-page modpack link import/export. Version 1.3.2 makes **Show Local Modpacks** open both the local modpack folder and the in-app Modpacks page, moves Nexus dashboard links beside Run Game on the right, adds a search watermark on the Mods page, and improves themed dropdown text contrast.
 
 Use the **Colour scheme** selector in Settings to switch between Tactical default, Dark mode, Light mode, Claude palette, Codex palette, Purple gradient, and Hacker themes. The selected theme is saved locally and applied on future launches.
 

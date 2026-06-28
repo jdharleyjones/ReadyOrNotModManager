@@ -422,7 +422,7 @@
                             <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="FolderMultipleOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Modpacks"/></StackPanel>
                         </Button>
                         <Button x:Name="DownloadsNavButton" Style="{StaticResource NavButton}" Click="DownloadsNav_Click">
-                            <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="DownloadBoxOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Downloads"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="DownloadBoxOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Extras"/></StackPanel>
                         </Button>
                         <Button x:Name="SettingsNavButton" Style="{StaticResource NavButton}" Click="SettingsNav_Click">
                             <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="CogOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Settings"/></StackPanel>
@@ -522,7 +522,7 @@
                                 <Border Style="{StaticResource CardBorderStyle}" Margin="12,0,0,0">
                                     <Grid>
                                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Cursor="Hand" ToolTip="Check GitHub for the latest release" MouseLeftButtonUp="RefreshUpdateStatus_Click">
                                             <iconPacks:PackIconMaterial x:Name="DashboardUpdateIcon" Kind="Update" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
                                             <TextBlock Text="APP VERSION" Style="{StaticResource SectionEyebrow}" VerticalAlignment="Center"/>
                                         </StackPanel>
@@ -691,18 +691,41 @@
 
                     <ScrollViewer x:Name="DownloadsPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <TextBlock Text="Archive locations" FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text="Manage retained downloads and browser fallback imports." Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,14"/>
-                            <WrapPanel>
-                                <Button Content="Open download folder" Click="OpenDownloadDirectory_Click" Style="{StaticResource ActionButton}"/>
-                                <Button Content="Import archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
-                                <Button Content="Delete selected download" Click="DeleteDownloadedArchive_Click" Style="{StaticResource DangerButton}"/>
-                                <Button Content="Download missing queue items" Click="DownloadMissing_Click" Style="{StaticResource DownloadButton}"/>
-                            </WrapPanel>
-                            <Border Style="{StaticResource CardBorderStyle}" BorderBrush="{DynamicResource AccentBrush}" Padding="34" Margin="0,42,0,0">
+                            <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="Import / Export Modpacks" FontSize="20" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Share Nexus mod links without sending downloaded archives. Imported modpacks are saved locally and loaded into Mods." Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,14"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="SharedModpackSelector" DisplayMemberPath="Name" Margin="0,0,12,0" ToolTip="Choose a saved local modpack to export"/>
+                                        <WrapPanel Grid.Column="1">
+                                            <Button Content="Export modpack" Click="ExportSharedModpack_Click" Style="{StaticResource SpecialButton}"/>
+                                            <Button Content="Import modpack" Click="ImportSharedModpack_Click" Style="{StaticResource ActionButton}"/>
+                                        </WrapPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+                                <StackPanel>
+                                    <TextBlock Text="Archive locations" FontSize="20" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Manage retained downloads and browser fallback imports." Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,14"/>
+                                    <WrapPanel>
+                                        <Button Content="Open download folder" Click="OpenDownloadDirectory_Click" Style="{StaticResource ActionButton}"/>
+                                        <Button Content="Import archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
+                                        <Button Content="Delete selected download" Click="DeleteDownloadedArchive_Click" Style="{StaticResource DangerButton}"/>
+                                        <Button Content="Download missing queue items" Click="DownloadMissing_Click" Style="{StaticResource DownloadButton}"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource CardBorderStyle}" BorderBrush="{DynamicResource AccentBrush}" Padding="34" Margin="0,26,0,0">
                                 <StackPanel HorizontalAlignment="Center">
                                     <TextBlock Text="WIP" FontSize="72" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="Downloads workspace is still being expanded." Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Extras workspace is still being expanded." Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>

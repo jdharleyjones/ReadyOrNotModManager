@@ -1,5 +1,14 @@
 # Release Notes
 
+## 1.3.3
+
+- Make the dashboard App Version icon/label clickable so users can retry the GitHub latest-release check.
+- Rename Downloads to Extras in the sidebar and page title.
+- Add an Extras page Import / Export Modpacks section above archive/download tools.
+- Export saved modpacks as `.ronmodpack.json` files containing Nexus links and IDs only.
+- Import shared modpack link files as local modpacks and load them into the Mods queue for download.
+- Add tests for manual update retry gating and modpack share export/import safety.
+
 ## 1.3.2
 
 - Rename the dashboard modpack action to **Show Local Modpacks**.

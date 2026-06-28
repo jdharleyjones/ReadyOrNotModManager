@@ -110,6 +110,8 @@ public sealed record DashboardStatusVisual(DashboardStatusKind Kind, string Stat
                 new DashboardStatusVisual(kind, status, "Latest GitHub release matches this build", VisualTone.Success, PackIconMaterialKind.Update),
             DashboardStatusKind.Update when normalized.Contains("available", StringComparison.OrdinalIgnoreCase) =>
                 new DashboardStatusVisual(kind, status, "A newer GitHub release is available", VisualTone.Warning, PackIconMaterialKind.Update),
+            DashboardStatusKind.Update when normalized.Contains("unable to check", StringComparison.OrdinalIgnoreCase) =>
+                new DashboardStatusVisual(kind, status, "Click App Version to retry the GitHub release check", VisualTone.Warning, PackIconMaterialKind.Update),
             DashboardStatusKind.Update =>
                 new DashboardStatusVisual(kind, status, "Release check has not completed", VisualTone.Neutral, PackIconMaterialKind.Update),
             _ => new DashboardStatusVisual(kind, status, "Status is unavailable", VisualTone.Neutral, PackIconMaterialKind.HelpCircleOutline)

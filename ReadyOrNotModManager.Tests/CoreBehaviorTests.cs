@@ -770,6 +770,7 @@ public sealed class CoreBehaviorTests
     [InlineData("Connected: Tester", DashboardStatusKind.Nexus, VisualTone.Success)]
     [InlineData("Not tested", DashboardStatusKind.Nexus, VisualTone.Warning)]
     [InlineData("Missing key", DashboardStatusKind.Nexus, VisualTone.Danger)]
+    [InlineData("Current: v1.3.3 | Unable to check", DashboardStatusKind.Update, VisualTone.Warning)]
     public void DashboardStatusVisual_MapsConnectionStates(string status, DashboardStatusKind kind, VisualTone expectedTone)
     {
         var visual = DashboardStatusVisual.FromStatus(kind, status);
@@ -837,6 +838,93 @@ public sealed class CoreBehaviorTests
         Assert.Equal(AppUpdateStatus.UpdateAvailable, update.Status);
         Assert.Equal("v1.2.5", update.LatestTag);
         Assert.Equal(AppUpdateStatus.UnableToCheck, failed.Status);
+    }
+
+    [Fact]
+    public void AppUpdateRefreshGate_AllowsForcedManualRetryAfterInitialCheck()
+    {
+        var gate = new AppUpdateRefreshGate();
+
+        Assert.True(gate.ShouldCheck(force: false));
+        Assert.False(gate.ShouldCheck(force: false));
+        Assert.True(gate.ShouldCheck(force: true));
+    }
+
+    [Fact]
+    public void ModpackShareStore_ExportsOnlySafeNexusMetadata()
+    {
+        var path = Path.Combine(CreateTempDirectory(), "shared.ronmodpack.json");
+        var profile = new ModProfile
+        {
+            Name = "Entry Team",
+            Items =
+            [
+                new ModProfileItem
+                {
+                    ModId = 10,
+                    FileId = 20,
+                    ModName = "Uniform",
+                    Version = "1.0",
+                    SourceUrl = "https://www.nexusmods.com/readyornot/mods/10",
+                    ArchivePath = "C:\\Private\\Uniform.zip",
+                    SelectedArchiveEntries = ["Uniform.pak"],
+                    LastInstallId = "install-secret"
+                },
+                new ModProfileItem
+                {
+                    ModName = "Manual Local Only",
+                    ArchivePath = "C:\\Private\\Manual.zip"
+                }
+            ]
+        };
+
+        var result = ModpackShareStore.Export(profile, path, new DateTimeOffset(2026, 6, 28, 12, 0, 0, TimeSpan.Zero));
+        var imported = ModpackShareStore.Import(path);
+        var item = Assert.Single(imported.Items);
+        var json = File.ReadAllText(path);
+
+        Assert.Equal(1, result.ExportedCount);
+        Assert.Equal(1, result.SkippedCount);
+        Assert.Equal("ReadyOrNotModManager.ModpackLinks", imported.Format);
+        Assert.Equal("Entry Team", imported.ModpackName);
+        Assert.Equal(10, item.ModId);
+        Assert.Equal(20, item.FileId);
+        Assert.Equal("https://www.nexusmods.com/readyornot/mods/10", item.SourceUrl);
+        Assert.DoesNotContain("Private", json);
+        Assert.DoesNotContain("install-secret", json);
+        Assert.DoesNotContain("Uniform.pak", json);
+    }
+
+    [Fact]
+    public void ModpackShareStore_ImportsAsUniqueProfileWithEmptyArchives()
+    {
+        var library = CreateTempDirectory();
+        var store = new ModProfileStore(library);
+        store.Save(new ModProfile { Name = "Entry Team" }, copyArchives: false);
+        var share = new ModpackShareFile
+        {
+            ModpackName = "Entry Team",
+            Items =
+            [
+                new ModpackShareItem
+                {
+                    ModId = 10,
+                    FileId = 20,
+                    ModName = "Uniform",
+                    Version = "1.0",
+                    SourceUrl = "https://www.nexusmods.com/readyornot/mods/10"
+                }
+            ]
+        };
+
+        var profile = ModpackShareStore.ToProfile(share, store, new DateTimeOffset(2026, 6, 28, 12, 10, 0, TimeSpan.Zero));
+        var item = Assert.Single(profile.Items);
+
+        Assert.Equal("Entry Team imported 2026-06-28 12-10", profile.Name);
+        Assert.Equal(string.Empty, item.ArchivePath);
+        Assert.Equal(string.Empty, item.LastInstallId);
+        Assert.Empty(item.SelectedArchiveEntries);
+        Assert.Equal("https://www.nexusmods.com/readyornot/mods/10", item.SourceUrl);
     }
 
     [Fact]

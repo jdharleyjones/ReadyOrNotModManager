@@ -40,10 +40,10 @@ public partial class MainWindow : Window
     private readonly LocalSettingsStore _settingsStore;
     private readonly string _appDataDirectory;
     private readonly ICollectionView _queueView;
+    private readonly AppUpdateRefreshGate _updateRefreshGate = new();
     private LocalSettings _settings = new();
     private string _lastNexusStatus = "Not tested";
     private bool _loadingSettings;
-    private bool _hasCheckedForUpdates;
 
     public MainWindow()
     {
@@ -57,6 +57,7 @@ public partial class MainWindow : Window
         QueueStatusFilterBox.SelectedIndex = 0;
         InstalledModsGrid.ItemsSource = _installedMods;
         ProfilesGrid.ItemsSource = _profiles;
+        SharedModpackSelector.ItemsSource = _profiles;
         ErrorsGrid.ItemsSource = _errors;
         ThemeSelector.ItemsSource = ThemeManager.Themes;
         LoadSettings();
@@ -105,7 +106,7 @@ public partial class MainWindow : Window
         SetupRoot.Visibility = Visibility.Collapsed;
         ShellRoot.Visibility = Visibility.Visible;
         ShowPage(DashboardPage, "Dashboard", "Ready or Not mod deployment overview");
-        _ = CheckForUpdatesAsync();
+        _ = CheckForUpdatesAsync(force: false);
         _ = AutoTestNexusConnectionOnLaunchAsync();
     }
 
@@ -261,7 +262,7 @@ public partial class MainWindow : Window
 
     private void ModpacksNav_Click(object sender, RoutedEventArgs e) => ShowPage(ModpacksPage, "Modpacks", "Save and switch local mod profiles");
 
-    private void DownloadsNav_Click(object sender, RoutedEventArgs e) => ShowPage(DownloadsPage, "Downloads", "Archive storage and browser fallback imports");
+    private void DownloadsNav_Click(object sender, RoutedEventArgs e) => ShowPage(DownloadsPage, "Extras", "Modpack sharing, archive storage, and browser fallback imports");
 
     private void SettingsNav_Click(object sender, RoutedEventArgs e) => ShowPage(SettingsPage, "Settings", "Connection, folders, and advanced options");
 
@@ -303,14 +304,13 @@ public partial class MainWindow : Window
         QueueSummaryText.Text = $"{_queueView.Cast<object>().Count()} shown / {_queue.Count} total";
     }
 
-    private async Task CheckForUpdatesAsync()
+    private async Task CheckForUpdatesAsync(bool force)
     {
-        if (_hasCheckedForUpdates)
+        if (!_updateRefreshGate.ShouldCheck(force))
         {
             return;
         }
 
-        _hasCheckedForUpdates = true;
         DashboardUpdateStatusText.Text = $"Current: v{GetCurrentVersion()} | Checking...";
         using var http = new HttpClient();
         var result = await new AppUpdateChecker(http).CheckLatestAsync(GetCurrentVersion(), CancellationToken.None);
@@ -321,6 +321,12 @@ public partial class MainWindow : Window
             _ => $"Current: v{GetCurrentVersion()} | Unable to check"
         };
         ApplyUpdateVisual(DashboardUpdateStatusText.Text);
+    }
+
+    private async void RefreshUpdateStatus_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        await CheckForUpdatesAsync(force: true);
+        SetStatus("Checked latest GitHub release.");
     }
 
     private static Version GetCurrentVersion()
@@ -704,6 +710,74 @@ public partial class MainWindow : Window
             QueueGrid.SelectedItem = imported.LastOrDefault();
             RefreshDashboard();
             SetStatus($"Imported {imported.Count} archive file(s).");
+        }
+    }
+
+    private void ExportSharedModpack_Click(object sender, RoutedEventArgs e)
+    {
+        var profile = SharedModpackSelector.SelectedItem as ModProfile ?? GetSelectedProfile();
+        if (profile is null)
+        {
+            SetStatus("Select a modpack to export.");
+            return;
+        }
+
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Title = "Export modpack links",
+            Filter = "Ready or Not modpack links (*.ronmodpack.json)|*.ronmodpack.json",
+            FileName = $"{SanitizeFileName(profile.Name)}.ronmodpack.json",
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)
+        };
+
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var result = ModpackShareStore.Export(profile, dialog.FileName, DateTimeOffset.UtcNow);
+            SetStatus($"Exported {result.ExportedCount} mod link(s) from {profile.Name}. Skipped {result.SkippedCount} local-only item(s).");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            SetStatus($"Could not export modpack: {ex.Message}");
+        }
+    }
+
+    private void ImportSharedModpack_Click(object sender, RoutedEventArgs e)
+    {
+        SaveSettings();
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Import modpack links",
+            Filter = "Ready or Not modpack links (*.ronmodpack.json)|*.ronmodpack.json|JSON files (*.json)|*.json",
+            InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory)
+        };
+
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            var store = CreateProfileStore();
+            var share = ModpackShareStore.Import(dialog.FileName);
+            var profile = ModpackShareStore.ToProfile(share, store, DateTimeOffset.UtcNow);
+            store.Save(profile, copyArchives: false);
+            RefreshProfiles();
+            SharedModpackSelector.SelectedItem = _profiles.FirstOrDefault(item => item.ProfileId == profile.ProfileId);
+            ProfilesGrid.SelectedItem = SharedModpackSelector.SelectedItem;
+            LoadProfileIntoQueue(profile);
+            ShowPage(QueuePage, "Mods", "Download and deploy selected Nexus files");
+            RefreshDashboard();
+            SetStatus($"Imported modpack links: {profile.Name} ({profile.Items.Count} mod(s)).");
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
+        {
+            SetStatus($"Could not import modpack links: {ex.Message}");
         }
     }
 
@@ -1469,7 +1543,9 @@ public partial class MainWindow : Window
             InstallId = profileItem.LastInstallId,
             ProfileId = profile.ProfileId,
             SelectedArchiveEntries = profileItem.SelectedArchiveEntries.ToList(),
-            Status = File.Exists(profileItem.ArchivePath) ? "Loaded from profile" : "Missing archive"
+            Status = string.IsNullOrWhiteSpace(profileItem.ArchivePath)
+                ? "Queued"
+                : File.Exists(profileItem.ArchivePath) ? "Loaded from profile" : "Missing archive"
         };
     }
 
@@ -1605,6 +1681,13 @@ public partial class MainWindow : Window
     {
         var version = string.IsNullOrWhiteSpace(item.Version) ? "latest" : item.Version;
         return $"{item.ModName}-{item.ModId}-{item.FileId}-{version}.zip";
+    }
+
+    private static string SanitizeFileName(string fileName)
+    {
+        var invalid = Path.GetInvalidFileNameChars();
+        var sanitized = new string(fileName.Select(character => invalid.Contains(character) ? '_' : character).ToArray());
+        return string.IsNullOrWhiteSpace(sanitized) ? "modpack" : sanitized;
     }
 
     private static void OpenUrl(string url)
