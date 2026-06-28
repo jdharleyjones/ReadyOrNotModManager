@@ -135,6 +135,21 @@ public partial class MainWindow : Window
         {
             _profiles.Add(profile);
         }
+
+        RefreshProfileExportState();
+    }
+
+    private void RefreshProfileExportState()
+    {
+        var state = ProfileExportState.FromProfiles(_profiles);
+        SharedModpackSelector.IsEnabled = state.CanExport;
+        ExportSharedModpackButton.IsEnabled = state.CanExport;
+        SharedModpackExportStateText.Text = state.Message;
+
+        if (state.CanExport && SharedModpackSelector.SelectedItem is null)
+        {
+            SharedModpackSelector.SelectedIndex = 0;
+        }
     }
 
     private void RefreshErrors()
@@ -262,7 +277,7 @@ public partial class MainWindow : Window
 
     private void ModpacksNav_Click(object sender, RoutedEventArgs e) => ShowPage(ModpacksPage, "Modpacks", "Save and switch local mod profiles");
 
-    private void DownloadsNav_Click(object sender, RoutedEventArgs e) => ShowPage(DownloadsPage, "Extras", "Modpack sharing, archive storage, and browser fallback imports");
+    private void DownloadsNav_Click(object sender, RoutedEventArgs e) => ShowPage(DownloadsPage, "Utilities", "Import, export, repair, and manage Ready or Not mod files.");
 
     private void SettingsNav_Click(object sender, RoutedEventArgs e) => ShowPage(SettingsPage, "Settings", "Connection, folders, and advanced options");
 

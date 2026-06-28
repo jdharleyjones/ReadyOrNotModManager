@@ -422,16 +422,16 @@
                             <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="FolderMultipleOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Modpacks"/></StackPanel>
                         </Button>
                         <Button x:Name="DownloadsNavButton" Style="{StaticResource NavButton}" Click="DownloadsNav_Click">
-                            <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="DownloadBoxOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Extras"/></StackPanel>
-                        </Button>
-                        <Button x:Name="SettingsNavButton" Style="{StaticResource NavButton}" Click="SettingsNav_Click">
-                            <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="CogOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Settings"/></StackPanel>
+                            <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="Tools" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Utilities"/></StackPanel>
                         </Button>
                         <Button x:Name="LogsNavButton" Style="{StaticResource NavButton}" Click="LogsNav_Click">
                             <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="AlertCircleOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Logs/Errors"/></StackPanel>
                         </Button>
                     </StackPanel>
                     <StackPanel DockPanel.Dock="Bottom">
+                        <Button x:Name="SettingsNavButton" Style="{StaticResource NavButton}" Click="SettingsNav_Click" Margin="0,0,0,14">
+                            <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="CogOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Settings"/></StackPanel>
+                        </Button>
                         <TextBlock Text="CONNECTION STATUS" Style="{StaticResource SectionEyebrow}" Margin="0,0,0,8"/>
                         <Border Style="{StaticResource CardBorderStyle}" Padding="10" Margin="0,0,0,8">
                             <Grid>
@@ -678,7 +678,7 @@
                             </DataGrid>
                         </Border>
                         <DockPanel Grid.Row="1" Margin="0,12,0,0">
-                            <TextBox x:Name="ProfileNameBox" Width="260" DockPanel.Dock="Left" ToolTip="Profile name"/>
+                            <TextBox x:Name="ProfileNameBox" Width="260" DockPanel.Dock="Left" Tag="Input Profile Name" ToolTip="Profile name"/>
                             <WrapPanel HorizontalAlignment="Right">
                                 <Button Content="Save current as new" Click="SaveProfileNew_Click" Style="{StaticResource SpecialButton}"/>
                                 <Button Content="Update selected" Click="UpdateProfileSelected_Click" Style="{StaticResource SpecialButton}"/>
@@ -691,99 +691,152 @@
 
                     <ScrollViewer x:Name="DownloadsPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
-                                <StackPanel>
-                                    <TextBlock Text="Import / Export Modpacks" FontSize="20" FontWeight="SemiBold"/>
-                                    <TextBlock Text="Share Nexus mod links without sending downloaded archives. Imported modpacks are saved locally and loaded into Mods." Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,14"/>
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <ComboBox x:Name="SharedModpackSelector" DisplayMemberPath="Name" Margin="0,0,12,0" ToolTip="Choose a saved local modpack to export"/>
-                                        <WrapPanel Grid.Column="1">
-                                            <Button Content="Export modpack" Click="ExportSharedModpack_Click" Style="{StaticResource SpecialButton}"/>
+                            <UniformGrid Columns="2" Margin="0,0,0,16">
+                                <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,8,0">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial Kind="ShareVariantOutline" Width="18" Height="18" Foreground="{DynamicResource WarningBrush}" Margin="0,0,10,0"/>
+                                            <TextBlock Text="Import / Export Modpacks" FontSize="20" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Share Nexus mod links without sending downloaded archives. Imported modpacks are saved locally and loaded into Mods." Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,14" TextWrapping="Wrap"/>
+                                        <ComboBox x:Name="SharedModpackSelector" DisplayMemberPath="Name" Margin="0,0,0,4" ToolTip="Choose a saved local modpack to export"/>
+                                        <TextBlock x:Name="SharedModpackExportStateText" Text="Choose a saved local modpack to export." Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,10"/>
+                                        <WrapPanel>
+                                            <Button x:Name="ExportSharedModpackButton" Content="Export modpack" Click="ExportSharedModpack_Click" Style="{StaticResource SpecialButton}"/>
                                             <Button Content="Import modpack" Click="ImportSharedModpack_Click" Style="{StaticResource ActionButton}"/>
                                         </WrapPanel>
-                                    </Grid>
-                                </StackPanel>
+                                    </StackPanel>
+                                </Border>
+
+                                <Border Style="{StaticResource CardBorderStyle}" Margin="8,0,0,0">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial Kind="ArchiveOutline" Width="18" Height="18" Foreground="{DynamicResource BlueBrush}" Margin="0,0,10,0"/>
+                                            <TextBlock Text="Archive Locations" FontSize="20" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Open retained downloads, import manual archives, or download missing queued files." Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,14" TextWrapping="Wrap"/>
+                                        <WrapPanel>
+                                            <Button Content="Open download folder" Click="OpenDownloadDirectory_Click" Style="{StaticResource ActionButton}"/>
+                                            <Button Content="Import archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
+                                            <Button Content="Download missing queue items" Click="DownloadMissing_Click" Style="{StaticResource DownloadButton}"/>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <Border Style="{StaticResource CardBorderStyle}" BorderBrush="{DynamicResource DangerBrush}" Margin="0,0,0,16">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Left">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial Kind="DeleteSweepOutline" Width="18" Height="18" Foreground="{DynamicResource DangerBrush}" Margin="0,0,10,0"/>
+                                            <TextBlock Text="Cleanup" FontSize="20" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                        <TextBlock Text="Remove selected downloaded archive files from disk without uninstalling deployed mod files." Foreground="{DynamicResource MutedBrush}" Margin="0,6,24,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                    <Button Content="Delete selected download" Click="DeleteDownloadedArchive_Click" Style="{StaticResource DangerButton}" DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                </DockPanel>
                             </Border>
 
-                            <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,16">
+                            <Border Style="{StaticResource CardBorderStyle}">
                                 <StackPanel>
-                                    <TextBlock Text="Archive locations" FontSize="20" FontWeight="SemiBold"/>
-                                    <TextBlock Text="Manage retained downloads and browser fallback imports." Foreground="{DynamicResource MutedBrush}" Margin="0,2,0,14"/>
-                                    <WrapPanel>
-                                        <Button Content="Open download folder" Click="OpenDownloadDirectory_Click" Style="{StaticResource ActionButton}"/>
-                                        <Button Content="Import archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
-                                        <Button Content="Delete selected download" Click="DeleteDownloadedArchive_Click" Style="{StaticResource DangerButton}"/>
-                                        <Button Content="Download missing queue items" Click="DownloadMissing_Click" Style="{StaticResource DownloadButton}"/>
-                                    </WrapPanel>
-                                </StackPanel>
-                            </Border>
-
-                            <Border Style="{StaticResource CardBorderStyle}" BorderBrush="{DynamicResource AccentBrush}" Padding="34" Margin="0,26,0,0">
-                                <StackPanel HorizontalAlignment="Center">
-                                    <TextBlock Text="WIP" FontSize="72" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" HorizontalAlignment="Center"/>
-                                    <TextBlock Text="Extras workspace is still being expanded." Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Planned Utilities" FontSize="20" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Future repair and safety tools for larger mod setups." Foreground="{DynamicResource MutedBrush}" Margin="0,4,0,14"/>
+                                    <UniformGrid Columns="3">
+                                        <Border Background="#55141C22" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="0,0,10,0" Opacity="0.72" IsHitTestVisible="False">
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <iconPacks:PackIconMaterial Kind="Radar" Width="22" Height="22" Foreground="{DynamicResource InactiveBrush}"/>
+                                                    <Border DockPanel.Dock="Right" BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" CornerRadius="8" Padding="8,2">
+                                                        <TextBlock Text="Coming soon" FontSize="11" Foreground="{DynamicResource WarningBrush}" FontWeight="SemiBold"/>
+                                                    </Border>
+                                                </DockPanel>
+                                                <TextBlock Text="Mod Conflict Scanner" FontSize="17" FontWeight="SemiBold" Margin="0,14,0,6"/>
+                                                <TextBlock Text="Scan installed and queued mods for possible file conflicts." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Background="#55141C22" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="5,0" Opacity="0.72" IsHitTestVisible="False">
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <iconPacks:PackIconMaterial Kind="ContentSaveOutline" Width="22" Height="22" Foreground="{DynamicResource InactiveBrush}"/>
+                                                    <Border DockPanel.Dock="Right" BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" CornerRadius="8" Padding="8,2">
+                                                        <TextBlock Text="Coming soon" FontSize="11" Foreground="{DynamicResource WarningBrush}" FontWeight="SemiBold"/>
+                                                    </Border>
+                                                </DockPanel>
+                                                <TextBlock Text="Backup Deployed Mods" FontSize="17" FontWeight="SemiBold" Margin="0,14,0,6"/>
+                                                <TextBlock Text="Create a backup of the current deployed mod setup." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Background="#55141C22" BorderBrush="{DynamicResource LineBrush}" BorderThickness="1" CornerRadius="8" Padding="16" Margin="10,0,0,0" Opacity="0.72" IsHitTestVisible="False">
+                                            <StackPanel>
+                                                <DockPanel>
+                                                    <iconPacks:PackIconMaterial Kind="Restore" Width="22" Height="22" Foreground="{DynamicResource InactiveBrush}"/>
+                                                    <Border DockPanel.Dock="Right" BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1" CornerRadius="8" Padding="8,2">
+                                                        <TextBlock Text="Coming soon" FontSize="11" Foreground="{DynamicResource WarningBrush}" FontWeight="SemiBold"/>
+                                                    </Border>
+                                                </DockPanel>
+                                                <TextBlock Text="Restore Previous Deployment" FontSize="17" FontWeight="SemiBold" Margin="0,14,0,6"/>
+                                                <TextBlock Text="Restore the last known working deployment backup." Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </UniformGrid>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
                     </ScrollViewer>
 
-                    <ScrollViewer x:Name="SettingsPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
-                        <StackPanel MaxWidth="880" HorizontalAlignment="Left">
+                    <ScrollViewer x:Name="SettingsPage" Visibility="Collapsed" VerticalScrollBarVisibility="Hidden">
+                        <StackPanel MaxWidth="900" HorizontalAlignment="Center">
                             <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,14">
-                                <StackPanel>
-                                    <TextBlock Text="NEXUS CONNECTION" Style="{StaticResource SectionEyebrow}"/>
-                                    <TextBlock Text="Nexus API key" FontWeight="SemiBold" Margin="0,12,0,0"/>
+                                <StackPanel MaxWidth="680" HorizontalAlignment="Center">
+                                    <TextBlock Text="NEXUS CONNECTION" Style="{StaticResource SectionEyebrow}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Nexus API key" FontWeight="SemiBold" Margin="0,12,0,0" HorizontalAlignment="Center"/>
                                     <PasswordBox x:Name="ApiKeyBox"/>
-                                    <CheckBox x:Name="AutoTestNexusOnLaunchBox" Content="Auto-test Nexus connection on app launch"/>
-                                    <WrapPanel><Button Content="Save settings" Click="SaveSettings_Click" Style="{StaticResource SpecialButton}"/><Button Content="Get API key" Click="OpenApiKeyPage_Click" Style="{StaticResource ActionButton}"/><Button Content="Test Connection" Click="TestConnection_Click" Style="{StaticResource DownloadButton}"/></WrapPanel>
+                                    <CheckBox x:Name="AutoTestNexusOnLaunchBox" Content="Auto-test Nexus connection on app launch" HorizontalAlignment="Center"/>
+                                    <WrapPanel HorizontalAlignment="Center"><Button Content="Save settings" Click="SaveSettings_Click" Style="{StaticResource SpecialButton}"/><Button Content="Get API key" Click="OpenApiKeyPage_Click" Style="{StaticResource ActionButton}"/><Button Content="Test Connection" Click="TestConnection_Click" Style="{StaticResource DownloadButton}"/></WrapPanel>
                                 </StackPanel>
                             </Border>
 
                             <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,14">
-                                <StackPanel>
-                                    <TextBlock Text="GAME FOLDERS" Style="{StaticResource SectionEyebrow}"/>
-                                    <TextBlock Text="Ready or Not install folder" FontWeight="SemiBold" Margin="0,12,0,0"/>
+                                <StackPanel MaxWidth="680" HorizontalAlignment="Center">
+                                    <TextBlock Text="GAME FOLDERS" Style="{StaticResource SectionEyebrow}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Ready or Not install folder" FontWeight="SemiBold" Margin="0,12,0,0" HorizontalAlignment="Center"/>
                                     <TextBox x:Name="GameDirectoryBox"/>
-                                    <WrapPanel><Button Content="Choose game folder" Click="BrowseGameDirectory_Click" Style="{StaticResource ActionButton}"/><Button Content="Auto-detect Game Folder" Click="AutoDetectGameFolder_Click" Style="{StaticResource DownloadButton}"/><Button Content="Open game folder" Click="OpenGameFolder_Click" Style="{StaticResource ActionButton}"/></WrapPanel>
+                                    <WrapPanel HorizontalAlignment="Center"><Button Content="Choose game folder" Click="BrowseGameDirectory_Click" Style="{StaticResource ActionButton}"/><Button Content="Auto-detect Game Folder" Click="AutoDetectGameFolder_Click" Style="{StaticResource DownloadButton}"/><Button Content="Open game folder" Click="OpenGameFolder_Click" Style="{StaticResource ActionButton}"/></WrapPanel>
 
-                                    <TextBlock Text="Download folder" FontWeight="SemiBold" Margin="0,14,0,0"/>
+                                    <TextBlock Text="Download folder" FontWeight="SemiBold" Margin="0,14,0,0" HorizontalAlignment="Center"/>
                                     <TextBox x:Name="DownloadDirectoryBox"/>
-                                    <WrapPanel><Button Content="Choose download folder" Click="BrowseDownloadDirectory_Click" Style="{StaticResource ActionButton}"/><Button Content="Open folder" Click="OpenDownloadDirectory_Click" Style="{StaticResource ActionButton}"/></WrapPanel>
+                                    <WrapPanel HorizontalAlignment="Center"><Button Content="Choose download folder" Click="BrowseDownloadDirectory_Click" Style="{StaticResource ActionButton}"/><Button Content="Open folder" Click="OpenDownloadDirectory_Click" Style="{StaticResource ActionButton}"/></WrapPanel>
 
-                                    <TextBlock Text="Browser fallback import folder" FontWeight="SemiBold" Margin="0,14,0,0"/>
+                                    <TextBlock Text="Browser fallback import folder" FontWeight="SemiBold" Margin="0,14,0,0" HorizontalAlignment="Center"/>
                                     <TextBox x:Name="ImportDirectoryBox"/>
-                                    <Button Content="Choose import folder" Click="BrowseImportDirectory_Click" Style="{StaticResource ActionButton}"/>
+                                    <Button Content="Choose import folder" Click="BrowseImportDirectory_Click" Style="{StaticResource ActionButton}" HorizontalAlignment="Center"/>
 
-                                    <TextBlock Text="Modpack library folder" FontWeight="SemiBold" Margin="0,14,0,0"/>
+                                    <TextBlock Text="Modpack library folder" FontWeight="SemiBold" Margin="0,14,0,0" HorizontalAlignment="Center"/>
                                     <TextBox x:Name="ProfileLibraryDirectoryBox"/>
-                                    <WrapPanel><Button Content="Choose library folder" Click="BrowseProfileLibraryDirectory_Click" Style="{StaticResource ActionButton}"/><Button Content="Open library" Click="OpenProfileLibraryDirectory_Click" Style="{StaticResource ActionButton}"/></WrapPanel>
+                                    <WrapPanel HorizontalAlignment="Center"><Button Content="Choose library folder" Click="BrowseProfileLibraryDirectory_Click" Style="{StaticResource ActionButton}"/><Button Content="Open library" Click="OpenProfileLibraryDirectory_Click" Style="{StaticResource ActionButton}"/></WrapPanel>
                                 </StackPanel>
                             </Border>
 
                             <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,14">
-                                <StackPanel>
-                                    <TextBlock Text="APPEARANCE" Style="{StaticResource SectionEyebrow}"/>
-                                    <TextBlock Text="Colour scheme" FontWeight="SemiBold" Margin="0,12,0,0"/>
+                                <StackPanel MaxWidth="680" HorizontalAlignment="Center">
+                                    <TextBlock Text="APPEARANCE" Style="{StaticResource SectionEyebrow}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Colour scheme" FontWeight="SemiBold" Margin="0,12,0,0" HorizontalAlignment="Center"/>
                                     <ComboBox x:Name="ThemeSelector" DisplayMemberPath="DisplayName" SelectedValuePath="Name" SelectionChanged="ThemeSelection_Changed" Margin="0,6,0,0"/>
                                 </StackPanel>
                             </Border>
 
                             <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,0,14">
-                                <StackPanel>
-                                    <TextBlock Text="ADVANCED" Style="{StaticResource SectionEyebrow}"/>
-                                    <CheckBox x:Name="AdvancedOptionsBox" Content="Advanced deploy options" Margin="0,12,0,0"/>
+                                <StackPanel MaxWidth="680" HorizontalAlignment="Center">
+                                    <TextBlock Text="ADVANCED" Style="{StaticResource SectionEyebrow}" HorizontalAlignment="Center"/>
+                                    <CheckBox x:Name="AdvancedOptionsBox" Content="Advanced deploy options" Margin="0,12,0,0" HorizontalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
 
                             <Border Style="{StaticResource CardBorderStyle}" BorderBrush="{DynamicResource DangerBrush}">
-                                <StackPanel>
-                                    <TextBlock Text="DANGER ZONE" Style="{StaticResource SectionEyebrow}" Foreground="{DynamicResource DangerBrush}"/>
-                                    <TextBlock Text="Reset setup or clear local settings, queue, manifests, and logs." Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,8"/>
-                                    <WrapPanel>
+                                <StackPanel MaxWidth="680" HorizontalAlignment="Center">
+                                    <TextBlock Text="DANGER ZONE" Style="{StaticResource SectionEyebrow}" Foreground="{DynamicResource DangerBrush}" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Reset setup or clear local settings, queue, manifests, and logs." Foreground="{DynamicResource MutedBrush}" Margin="0,10,0,8" TextAlignment="Center" TextWrapping="Wrap"/>
+                                    <WrapPanel HorizontalAlignment="Center">
                                         <Button Content="Reset setup wizard" Click="ResetSetupWizard_Click" Style="{StaticResource SpecialButton}"/>
                                         <Button Content="Clear user data" Click="ClearUserData_Click" Style="{StaticResource DangerButton}"/>
                                     </WrapPanel>

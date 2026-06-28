@@ -928,6 +928,18 @@ public sealed class CoreBehaviorTests
     }
 
     [Fact]
+    public void ProfileExportState_DisablesExportWhenNoProfilesExist()
+    {
+        var empty = ProfileExportState.FromProfiles([]);
+        var populated = ProfileExportState.FromProfiles([new ModProfile { Name = "Entry Team" }]);
+
+        Assert.False(empty.CanExport);
+        Assert.Equal("No saved modpacks available to export.", empty.Message);
+        Assert.True(populated.CanExport);
+        Assert.Equal("Choose a saved local modpack to export.", populated.Message);
+    }
+
+    [Fact]
     public void ModProfileStore_RenamesProfileAndRejectsInvalidNames()
     {
         var root = CreateTempDirectory();

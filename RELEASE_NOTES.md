@@ -1,5 +1,14 @@
 # Release Notes
 
+## 1.3.4
+
+- Rename Extras to Utilities in the sidebar and page title.
+- Redesign Utilities as a finished hub with modpack sharing, archive tools, cleanup, and planned utility cards.
+- Add disabled Coming soon cards for Mod Conflict Scanner, Backup Deployed Mods, and Restore Previous Deployment.
+- Disable modpack export controls and show a muted empty-state label when no saved modpacks exist.
+- Move Settings to the bottom sidebar area and center Settings page controls.
+- Add an `Input Profile Name` watermark to the Modpacks profile name field.
+
 ## 1.3.3
 
 - Make the dashboard App Version icon/label clickable so users can retry the GitHub latest-release check.
