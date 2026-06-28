@@ -1,5 +1,10 @@
 # Release Notes
 
+## 1.3.9
+
+- Restore the runtime icon swap so the app uses `ReadyOrNotSteam-Win64-Shipping.exe` from the configured Ready or Not folder for the taskbar and header icon when available.
+- Keep the new bundled tactical headset icon as the default/fallback icon when the game executable cannot be found.
+
 ## 1.3.8
 
 - Replace the bundled app icon with a cleaner ImageMagick-generated tactical headset icon based on `new.png`.

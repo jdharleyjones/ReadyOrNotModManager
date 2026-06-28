@@ -90,7 +90,7 @@ public partial class MainWindow : Window
             SetupImportDirectoryBox.Text = _settings.ImportDirectory;
             SetupProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
             ValidateSetupFields();
-            ApplyApplicationWindowIcon();
+            ApplyPreferredWindowIcon();
         }
         finally
         {
@@ -1439,12 +1439,12 @@ public partial class MainWindow : Window
         _settingsStore.Save(_settings);
         ValidateSetupFields();
         RefreshDashboard();
-        ApplyApplicationWindowIcon();
+        ApplyPreferredWindowIcon();
     }
 
-    private void ApplyApplicationWindowIcon()
+    private void ApplyPreferredWindowIcon()
     {
-        var icon = WindowIconProvider.LoadApplicationIcon();
+        var icon = WindowIconProvider.LoadPreferredIcon(_settings.ReadyOrNotDirectory);
         if (icon is not null)
         {
             Icon = icon;

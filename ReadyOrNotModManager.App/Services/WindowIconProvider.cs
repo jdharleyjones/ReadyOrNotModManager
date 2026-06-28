@@ -11,9 +11,10 @@ namespace ReadyOrNotModManager.App.Services;
 
 public static class WindowIconProvider
 {
-    public static ImageSource? LoadApplicationIcon()
+    public static ImageSource? LoadPreferredIcon(string installDirectory)
     {
-        return LoadExecutableIcon(GetCurrentExecutablePath());
+        var gameExecutable = ReadyOrNotLauncher.FindDirectExecutable(installDirectory);
+        return LoadExecutableIcon(gameExecutable) ?? LoadExecutableIcon(GetCurrentExecutablePath());
     }
 
     private static ImageSource? LoadExecutableIcon(string? executablePath)
