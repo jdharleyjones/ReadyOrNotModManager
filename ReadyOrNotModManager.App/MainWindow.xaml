@@ -412,7 +412,7 @@
             <Border Background="#D4141B21" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,1,0" Padding="18">
                 <DockPanel LastChildFill="True">
                     <StackPanel DockPanel.Dock="Top">
-                        <TextBlock Text="RON" FontSize="32" FontWeight="SemiBold"/>
+                        <TextBlock Text="Ready Or Not" FontSize="25" FontWeight="SemiBold"/>
                         <TextBlock Text="MOD CONTROL" Style="{StaticResource SectionEyebrow}" Margin="0,0,0,26"/>
                         <Button x:Name="DashboardNavButton" Style="{StaticResource NavButton}" Click="DashboardNav_Click">
                             <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="ViewDashboardOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Dashboard"/></StackPanel>
@@ -704,7 +704,13 @@
                                             <TextBlock Text="Import / Export Modpacks" FontSize="20" FontWeight="SemiBold"/>
                                         </StackPanel>
                                         <TextBlock Text="Share Nexus mod links without sending downloaded archives. Imported modpacks are saved locally and loaded into Mods." Foreground="{DynamicResource MutedBrush}" Margin="0,6,0,14" TextWrapping="Wrap"/>
-                                        <ComboBox x:Name="SharedModpackSelector" DisplayMemberPath="Name" Margin="0,0,0,4" ToolTip="Choose a saved local modpack to export"/>
+                                        <ComboBox x:Name="SharedModpackSelector" Margin="0,0,0,4" ToolTip="Choose a saved local modpack to export">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Text="{Binding Name}" Foreground="{DynamicResource TextBrush}"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
                                         <TextBlock x:Name="SharedModpackExportStateText" Text="Choose a saved local modpack to export." Foreground="{DynamicResource MutedBrush}" Margin="0,0,0,10"/>
                                         <WrapPanel>
                                             <Button x:Name="ExportSharedModpackButton" Content="Export modpack" Click="ExportSharedModpack_Click" Style="{StaticResource SpecialButton}"/>

@@ -962,6 +962,14 @@ public sealed class CoreBehaviorTests
     }
 
     [Fact]
+    public void ModProfile_ToStringUsesNameForComboBoxFallback()
+    {
+        var profile = new ModProfile { Name = "SWAT pack" };
+
+        Assert.Equal("SWAT pack", profile.ToString());
+    }
+
+    [Fact]
     public void ReadyOrNotLauncher_PrefersSteamLaunch()
     {
         var root = CreateTempDirectory();
@@ -987,6 +995,19 @@ public sealed class CoreBehaviorTests
         Assert.Equal(executable, result.Target);
         Assert.Equal(Path.GetDirectoryName(executable), result.WorkingDirectory);
         Assert.True(result.UseShellExecute);
+    }
+
+    [Fact]
+    public void ReadyOrNotLauncher_FindsDirectExecutableForWindowIcon()
+    {
+        var root = CreateTempDirectory();
+        var executable = Path.Combine(root, "ReadyOrNot", "Binaries", "Win64", "ReadyOrNot-Win64-Shipping.exe");
+        Directory.CreateDirectory(Path.GetDirectoryName(executable)!);
+        File.WriteAllText(executable, string.Empty);
+
+        var result = ReadyOrNotLauncher.FindDirectExecutable(root);
+
+        Assert.Equal(executable, result);
     }
 
     [Fact]

@@ -9,6 +9,11 @@ public sealed class ModProfile
     public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
     public List<ModProfileItem> Items { get; set; } = [];
+
+    public override string ToString()
+    {
+        return Name;
+    }
 }
 
 public sealed class ModProfileItem

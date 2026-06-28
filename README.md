@@ -1,6 +1,6 @@
 # Ready or Not Nexus Mod Manager
 
-Version: `1.3.5`
+Version: `1.3.6`
 
 A Windows desktop utility for queueing Ready or Not mods from Nexus Mods, downloading archives through Nexus-supported API flows, expanding collections into individual mod files, and deploying Unreal mod files into the Ready or Not `Content\Paks` directory.
 
@@ -56,7 +56,7 @@ Use **Utilities** to export a saved modpack as a `.ronmodpack.json` link file, i
 
 Long download and deploy operations report overall progress in the bottom status bar. Failed items are skipped so the rest of the queue can continue.
 
-Version 1.3.5 polishes the Utilities and Settings UI by removing the white disabled dropdown chrome, centering the Settings page header, and showing clean colour scheme names in the selector. Version 1.3.4 redesigns Utilities into a finished hub with cleaner modpack/archive cards, disabled planned utility cards, centered Settings panels, and better empty modpack export states.
+Version 1.3.6 fixes the Utilities modpack selector display text, updates the sidebar brand label to Ready Or Not, and uses the local Ready or Not executable icon for the app window when available. Version 1.3.5 polishes the Utilities and Settings UI by removing the white disabled dropdown chrome, centering the Settings page header, and showing clean colour scheme names in the selector.
 
 Use the **Colour scheme** selector in Settings to switch between Tactical default, Dark mode, Light mode, Claude palette, Codex palette, Purple gradient, and Hacker themes. The selected theme is saved locally and applied on future launches.
 

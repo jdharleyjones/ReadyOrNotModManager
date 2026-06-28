@@ -86,6 +86,7 @@ public partial class MainWindow : Window
             SetupImportDirectoryBox.Text = _settings.ImportDirectory;
             SetupProfileLibraryDirectoryBox.Text = _settings.ProfileLibraryDirectory;
             ValidateSetupFields();
+            ApplyPreferredWindowIcon();
         }
         finally
         {
@@ -1330,6 +1331,16 @@ public partial class MainWindow : Window
         _settingsStore.Save(_settings);
         ValidateSetupFields();
         RefreshDashboard();
+        ApplyPreferredWindowIcon();
+    }
+
+    private void ApplyPreferredWindowIcon()
+    {
+        var icon = WindowIconProvider.LoadPreferredIcon(_settings.ReadyOrNotDirectory);
+        if (icon is not null)
+        {
+            Icon = icon;
+        }
     }
 
     private void CopySetupFieldsToSettingsFields()

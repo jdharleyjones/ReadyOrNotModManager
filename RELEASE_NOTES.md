@@ -1,5 +1,11 @@
 # Release Notes
 
+## 1.3.6
+
+- Fix the Utilities modpack export dropdown so saved modpacks show their profile names instead of the `ModProfile` type name.
+- Change the sidebar brand label from `RON` to `Ready Or Not`.
+- Use the local Ready or Not executable icon for the app window/taskbar when available, with the bundled icon as fallback.
+
 ## 1.3.5
 
 - Fix the Utilities modpack export dropdown so its disabled/empty state stays dark and transparent.
