@@ -1,5 +1,13 @@
 # Release Notes
 
+## 1.3.10
+
+- Change the connected Nexus dashboard account label from `Correct:` to `Connected:`.
+- Add a dynamic sidebar `Mod Suite - Version` label and separator under the Ready Or Not brand text.
+- Add a dashboard Modpacks status card showing saved local profile count.
+- Add warning popups for queue actions that cannot run because required URLs, downloads, selections, or folders are missing.
+- Auto-hide the bottom progress bar shortly after operations reach 100%.
+
 ## 1.3.9
 
 - Restore the runtime icon swap so the app uses `ReadyOrNotSteam-Win64-Shipping.exe` from the configured Ready or Not folder for the taskbar and header icon when available.

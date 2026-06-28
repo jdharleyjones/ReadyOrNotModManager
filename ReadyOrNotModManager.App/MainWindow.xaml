@@ -471,7 +471,7 @@
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="12,0,0,0">
                 <Image Source="{Binding Icon, RelativeSource={RelativeSource AncestorType=Window}}" Width="16" Height="16" Margin="0,0,9,0"/>
             </StackPanel>
-            <TextBlock Text="----===[   Ready Or Not Mod Manager : By InconspicuousJawa   ]===----"
+            <TextBlock Text="-----===::[   Ready Or Not Mod Manager : By InconspicuousJawa   ]::===-----"
                        FontSize="12"
                        FontWeight="SemiBold"
                        Foreground="{DynamicResource MutedBrush}"
@@ -570,8 +570,8 @@
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0">
                         <TextBlock Text="Ready Or Not" FontSize="25" FontWeight="Bold"/>
-                        <TextBlock Text="MOD CONTROL" Style="{StaticResource SectionEyebrow}" Margin="0,0,0,14"/>
-                        <Border Height="1" Background="{DynamicResource CardBorderBrush}" Opacity="0.9" Margin="0,0,0,22"/>
+                        <Border Height="1" Background="{DynamicResource CardBorderBrush}" Opacity="0.9" Margin="0,9,0,10"/>
+                        <TextBlock x:Name="SidebarVersionText" Text="MOD SUITE" Style="{StaticResource SectionEyebrow}" Margin="0,0,0,20" TextWrapping="Wrap"/>
                         <Button x:Name="DashboardNavButton" Style="{StaticResource NavButton}" Click="DashboardNav_Click">
                             <StackPanel Orientation="Horizontal"><iconPacks:PackIconMaterial Kind="ViewDashboardOutline" Width="18" Height="18" Margin="0,0,12,0"/><TextBlock Text="Dashboard"/></StackPanel>
                         </Button>
@@ -644,7 +644,7 @@
                 <Grid Grid.Row="1">
                     <ScrollViewer x:Name="DashboardPage" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <UniformGrid Columns="5" Margin="0,0,0,16">
+                            <UniformGrid Columns="6" Margin="0,0,0,16">
                                 <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,12,0">
                                     <Grid>
                                         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -664,7 +664,7 @@
                                             <TextBlock Text="NEXUS" Style="{StaticResource SectionEyebrow}" VerticalAlignment="Center"/>
                                         </StackPanel>
                                         <StackPanel Grid.Row="1" Margin="0,10,0,2">
-                                            <TextBlock x:Name="DashboardNexusPrefixText" Text="Correct:" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Visibility="Collapsed"/>
+                                            <TextBlock x:Name="DashboardNexusPrefixText" Text="Connected:" Foreground="{DynamicResource MutedBrush}" FontSize="11" FontWeight="SemiBold" Visibility="Collapsed"/>
                                             <TextBlock x:Name="DashboardNexusStatusText" Text="Not tested" FontSize="24" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                         <TextBlock x:Name="DashboardNexusHelperText" Grid.Row="2" Text="Run a connection test from Settings" Foreground="{DynamicResource MutedBrush}" TextWrapping="Wrap"/>
@@ -680,7 +680,7 @@
                                         <TextBlock Text="Tracked deployed mods" Foreground="{DynamicResource MutedBrush}"/>
                                     </StackPanel>
                                 </Border>
-                                <Border Style="{StaticResource CardBorderStyle}">
+                                <Border Style="{StaticResource CardBorderStyle}" Margin="0,0,12,0">
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <iconPacks:PackIconMaterial Kind="PlaylistCheck" Width="18" Height="18" Foreground="{DynamicResource BlueBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
@@ -688,6 +688,16 @@
                                         </StackPanel>
                                         <TextBlock x:Name="PendingQueueCountText" Text="0" FontSize="34" FontWeight="SemiBold" Foreground="{DynamicResource BlueBrush}" Margin="0,8,0,0"/>
                                         <TextBlock Text="Queue items awaiting action" Foreground="{DynamicResource MutedBrush}"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource CardBorderStyle}">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <iconPacks:PackIconMaterial Kind="FolderMultipleOutline" Width="18" Height="18" Foreground="{DynamicResource WarningBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="MODPACKS" Style="{StaticResource SectionEyebrow}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock x:Name="ModpackCountText" Text="0" FontSize="34" FontWeight="SemiBold" Foreground="{DynamicResource WarningBrush}" Margin="0,8,0,0"/>
+                                        <TextBlock Text="Saved local profiles" Foreground="{DynamicResource MutedBrush}"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource CardBorderStyle}" Margin="12,0,0,0">
@@ -818,7 +828,7 @@
                                     <Button Content="Deploy selected" Click="DeploySelected_Click" Style="{StaticResource DeployButton}"/>
                                 </StackPanel>
                                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Margin="16,0,0,0">
-                                    <Button Content="Open Nexus page" Click="OpenSelectedPage_Click" Style="{StaticResource ActionButton}"/>
+                                    <Button Content="Open Nexus page" Click="OpenSelectedPage_Click" Style="{StaticResource SpecialButton}"/>
                                     <Button Content="Import archive" Click="ImportArchive_Click" Style="{StaticResource ActionButton}"/>
                                 </StackPanel>
                                 <WrapPanel HorizontalAlignment="Right">

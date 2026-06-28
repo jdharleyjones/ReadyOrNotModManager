@@ -45,6 +45,7 @@ public partial class MainWindow : Window
     private LocalSettings _settings = new();
     private string _lastNexusStatus = "Not tested";
     private bool _loadingSettings;
+    private int _progressHideVersion;
 
     public MainWindow()
     {
@@ -191,8 +192,10 @@ public partial class MainWindow : Window
         ApplyUpdateVisual(DashboardUpdateStatusText.Text);
 
         var summary = DashboardSummaryFactory.Create(CreateManifestStore().Load(), _queue, CreateErrorLogStore().Load(), CreateActivityLogStore().Load());
+        SidebarVersionText.Text = $"MOD SUITE - VERSION: {GetDisplayVersion()}";
         InstalledModCountText.Text = summary.InstalledModCount.ToString();
         PendingQueueCountText.Text = summary.PendingQueueCount.ToString();
+        ModpackCountText.Text = _profiles.Count.ToString();
         RecentActivityList.ItemsSource = summary.RecentActivity.Count == 0
             ? [RecentActivityVisual.FromActivity(new RecentActivityItem(DateTimeOffset.UtcNow, "No recent activity yet"))]
             : summary.RecentActivity.Select(RecentActivityVisual.FromActivity).ToArray();
@@ -356,6 +359,12 @@ public partial class MainWindow : Window
     private static Version GetCurrentVersion()
     {
         return Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0, 0);
+    }
+
+    private static string GetDisplayVersion()
+    {
+        var version = GetCurrentVersion();
+        return $"{version.Major}.{version.Minor}.{Math.Max(version.Build, 0)}";
     }
 
     private void SaveSettings_Click(object sender, RoutedEventArgs e)
@@ -600,7 +609,7 @@ public partial class MainWindow : Window
             if (string.IsNullOrWhiteSpace(apiKey))
             {
                 _lastNexusStatus = "Missing key";
-                SetStatus("Enter a Nexus API key before testing.");
+                ShowWarning("Enter a Nexus API key before testing.");
                 ValidateSetupFields();
                 return;
             }
@@ -626,7 +635,7 @@ public partial class MainWindow : Window
         var detected = ReadyOrNotInstallDetector.FindInstallDirectory();
         if (string.IsNullOrWhiteSpace(detected))
         {
-            SetStatus("Ready or Not was not found in the usual Steam library folders.");
+            ShowWarning("Ready or Not was not found in the usual Steam library folders.");
             SetupGameStatusText.Text = "Auto-detect could not find Ready or Not";
             SetupGameStatusText.Foreground = FindBrush("DangerBrush");
             return;
@@ -689,6 +698,12 @@ public partial class MainWindow : Window
         var input = sender is FrameworkElement { Tag: System.Windows.Controls.TextBox taggedBox }
             ? taggedBox
             : UrlBox;
+
+        if (string.IsNullOrWhiteSpace(input.Text))
+        {
+            ShowWarning("Input a Nexus mod or collection URL before adding to the Mods queue.");
+            return;
+        }
 
         await RunUiTaskAsync(async () =>
         {
@@ -764,6 +779,18 @@ public partial class MainWindow : Window
             var nexus = new NexusClient(http, _settings.ApiKey);
             var downloader = new DownloadManager(http);
             var items = _queue.Where(item => string.IsNullOrWhiteSpace(item.ArchivePath)).ToArray();
+            if (_queue.Count == 0)
+            {
+                ShowWarning("Unable to download missing mods because no Nexus URLs or archives have been added.");
+                return;
+            }
+
+            if (items.Length == 0)
+            {
+                ShowWarning("There are no missing downloads. Add a Nexus URL or remove existing downloads before trying again.");
+                return;
+            }
+
             var total = Math.Max(items.Length, 1);
 
             for (var index = 0; index < items.Length; index++)
@@ -809,10 +836,24 @@ public partial class MainWindow : Window
 
     private void OpenSelectedPage_Click(object sender, RoutedEventArgs e)
     {
-        foreach (var item in GetSelectedItems())
+        var items = GetSelectedItems(requireSelection: true);
+        if (items.Count == 0)
+        {
+            ShowWarning("Select a mod with a Nexus page before opening it.");
+            return;
+        }
+
+        var opened = 0;
+        foreach (var item in items.Where(item => !string.IsNullOrWhiteSpace(item.SourceUrl)))
         {
             OpenUrl(item.SourceUrl);
             item.Status = "Opened in browser";
+            opened++;
+        }
+
+        if (opened == 0)
+        {
+            ShowWarning("The selected mod does not have a Nexus page URL to open.");
         }
     }
 
@@ -846,7 +887,7 @@ public partial class MainWindow : Window
         var profile = SharedModpackSelector.SelectedItem as ModProfile ?? GetSelectedProfile();
         if (profile is null)
         {
-            SetStatus("Select a modpack to export.");
+            ShowWarning("Select a modpack to export.");
             return;
         }
 
@@ -870,7 +911,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
-            SetStatus($"Could not export modpack: {ex.Message}");
+            ShowWarning($"Could not export modpack: {ex.Message}");
         }
     }
 
@@ -905,7 +946,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) when (ex is InvalidDataException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
         {
-            SetStatus($"Could not import modpack links: {ex.Message}");
+            ShowWarning($"Could not import modpack links: {ex.Message}");
         }
     }
 
@@ -914,7 +955,7 @@ public partial class MainWindow : Window
         var items = GetSelectedItems(requireSelection: true);
         if (items.Count == 0)
         {
-            SetStatus("Select a queue item before deleting a downloaded archive.");
+            ShowWarning("Select a queue item before deleting a downloaded archive.");
             return;
         }
 
@@ -924,7 +965,7 @@ public partial class MainWindow : Window
 
         if (archives.Length == 0)
         {
-            SetStatus("Selected item has no downloaded archive to delete.");
+            ShowWarning("Selected item has no downloaded archive to delete.");
             return;
         }
 
@@ -955,7 +996,7 @@ public partial class MainWindow : Window
         var items = GetSelectedItems(requireSelection: true);
         if (items.Count == 0)
         {
-            SetStatus("Select queue items before removing them.");
+            ShowWarning("Select queue items before removing them.");
             return;
         }
 
@@ -966,10 +1007,23 @@ public partial class MainWindow : Window
 
     private async void DeploySelected_Click(object sender, RoutedEventArgs e)
     {
+        var selected = GetSelectedItems(requireSelection: true).ToArray();
+        if (selected.Length == 0)
+        {
+            ShowWarning("Select one or more downloaded mods before using Deploy selected.");
+            return;
+        }
+
+        if (selected.All(item => string.IsNullOrWhiteSpace(item.ArchivePath)))
+        {
+            ShowWarning("The selected mod has no downloaded archive. Download it first or use Import archive.");
+            return;
+        }
+
         await RunUiTaskAsync(async () =>
         {
             SaveSettings();
-            await DeployQueueItemsAsync(GetSelectedItems().ToArray(), "Deployment complete.");
+            await DeployQueueItemsAsync(selected, "Deployment complete.");
         });
     }
 
@@ -981,7 +1035,7 @@ public partial class MainWindow : Window
             var deployable = QueueDeploymentPlanner.GetDeployableDownloadedItems(_queue);
             if (deployable.Count == 0)
             {
-                SetStatus("No downloaded queue items are ready to deploy.");
+                ShowWarning("No downloaded queue items are ready to deploy. Download missing items or import archives first.");
                 return;
             }
 
@@ -991,6 +1045,12 @@ public partial class MainWindow : Window
 
     private async Task DeployQueueItemsAsync(IReadOnlyList<ModQueueItem> items, string completionMessage)
     {
+        if (items.Count == 0)
+        {
+            ShowWarning("There are no queue items selected for deployment.");
+            return;
+        }
+
         if (!ReadyOrNotPaths.LooksLikeInstallDirectory(_settings.ReadyOrNotDirectory))
         {
             throw new DirectoryNotFoundException("Choose the Ready or Not install folder that contains ReadyOrNot\\Content\\Paks.");
@@ -1049,10 +1109,17 @@ public partial class MainWindow : Window
 
     private void UninstallSelected_Click(object sender, RoutedEventArgs e)
     {
+        var selectedItems = GetSelectedItems(requireSelection: true);
+        if (selectedItems.Count == 0)
+        {
+            ShowWarning("Select deployed queue items before uninstalling.");
+            return;
+        }
+
         var manager = CreateDeploymentManager();
         var manifest = CreateManifestStore().Load();
 
-        foreach (var item in GetSelectedItems())
+        foreach (var item in selectedItems)
         {
             var installId = string.IsNullOrWhiteSpace(item.InstallId)
                 ? manifest.Records.FirstOrDefault(record => record.SourceUrl.Equals(item.SourceUrl, StringComparison.OrdinalIgnoreCase))?.InstallId
@@ -1075,12 +1142,20 @@ public partial class MainWindow : Window
 
     private void ClearCompleted_Click(object sender, RoutedEventArgs e)
     {
-        foreach (var item in _queue.Where(item => item.Status is "Deployed" or "Uninstalled").ToArray())
+        var completed = _queue.Where(item => item.Status is "Deployed" or "Uninstalled").ToArray();
+        if (completed.Length == 0)
+        {
+            ShowWarning("There are no completed queue items to clear.");
+            return;
+        }
+
+        foreach (var item in completed)
         {
             _queue.Remove(item);
         }
 
         RefreshDashboard();
+        SetStatus($"Cleared {completed.Length} completed queue item(s).");
     }
 
     private void OpenProfiles_Click(object sender, RoutedEventArgs e)
@@ -1118,6 +1193,7 @@ public partial class MainWindow : Window
         }
 
         SetStatus("Ready or Not Paks folder was not found.");
+        ShowWarning("Ready or Not Paks folder was not found. Check the game install folder in Settings.");
     }
 
     private void OpenGameFolder_Click(object sender, RoutedEventArgs e)
@@ -1130,6 +1206,7 @@ public partial class MainWindow : Window
         }
 
         SetStatus("Ready or Not install folder was not found.");
+        ShowWarning("Ready or Not install folder was not found. Check the game install folder in Settings.");
     }
 
     private void RunGame_Click(object sender, RoutedEventArgs e)
@@ -1146,7 +1223,7 @@ public partial class MainWindow : Window
             var fallback = ReadyOrNotLauncher.Resolve(_settings.ReadyOrNotDirectory, preferSteam: false);
             if (!fallback.CanLaunch)
             {
-                SetStatus(fallback.Message);
+                ShowWarning(fallback.Message);
                 return;
             }
 
@@ -1160,7 +1237,7 @@ public partial class MainWindow : Window
         var selected = InstalledModsGrid.SelectedItems.Cast<InstalledModRecord>().ToArray();
         if (selected.Length == 0)
         {
-            SetStatus("Select installed mods before uninstalling.");
+            ShowWarning("Select installed mods before uninstalling.");
             return;
         }
 
@@ -1184,7 +1261,7 @@ public partial class MainWindow : Window
         });
         if (profile.Items.Count == 0)
         {
-            SetStatus("Deploy mods before saving a modpack. Modpacks now snapshot installed mods only.");
+            ShowWarning("Deploy mods before saving a modpack. Modpacks now snapshot installed mods only.");
             return;
         }
 
@@ -1210,7 +1287,7 @@ public partial class MainWindow : Window
         profile = CreateProfileFromInstalledMods(profile);
         if (profile.Items.Count == 0)
         {
-            SetStatus("Deploy mods before updating a modpack. Modpacks now snapshot installed mods only.");
+            ShowWarning("Deploy mods before updating a modpack. Modpacks now snapshot installed mods only.");
             return;
         }
 
@@ -1294,14 +1371,14 @@ public partial class MainWindow : Window
             : ProfileNameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(requestedName))
         {
-            SetStatus("Rename canceled.");
+            ShowWarning("Rename canceled.");
             return;
         }
 
         var result = CreateProfileStore().Rename(profile.ProfileId, requestedName);
         if (!result.Success)
         {
-            SetStatus(result.Message);
+            ShowWarning(result.Message);
             return;
         }
 
@@ -1692,7 +1769,7 @@ public partial class MainWindow : Window
         var profile = ProfilesGrid.SelectedItem as ModProfile;
         if (profile is null)
         {
-            SetStatus("Select a modpack first.");
+            ShowWarning("Select a modpack first.");
         }
 
         return profile;
@@ -1703,7 +1780,7 @@ public partial class MainWindow : Window
         var entry = ErrorsGrid.SelectedItem as ErrorLogEntry;
         if (entry is null)
         {
-            SetStatus("Select an error first.");
+            ShowWarning("Select an error first.");
         }
 
         return entry;
@@ -1892,11 +1969,52 @@ public partial class MainWindow : Window
 
     private void SetProgress(double value, string message)
     {
-        ProgressPanel.Visibility = string.IsNullOrWhiteSpace(message) && value <= 0
-            ? Visibility.Collapsed
-            : Visibility.Visible;
-        OverallProgressBar.Value = Math.Clamp(value, 0, 1) * 100;
+        var normalized = Math.Clamp(value, 0, 1);
+        if (string.IsNullOrWhiteSpace(message) && normalized <= 0)
+        {
+            _progressHideVersion++;
+            ProgressPanel.Visibility = Visibility.Collapsed;
+            OverallProgressBar.Value = 0;
+            ProgressText.Text = string.Empty;
+            return;
+        }
+
+        ProgressPanel.Visibility = Visibility.Visible;
+        OverallProgressBar.Value = normalized * 100;
         ProgressText.Text = message;
+
+        if (normalized >= 1)
+        {
+            var hideVersion = ++_progressHideVersion;
+            _ = HideProgressAfterCompletionAsync(hideVersion);
+            return;
+        }
+
+        _progressHideVersion++;
+    }
+
+    private async Task HideProgressAfterCompletionAsync(int hideVersion)
+    {
+        await Task.Delay(1600);
+        if (_progressHideVersion != hideVersion)
+        {
+            return;
+        }
+
+        ProgressPanel.Visibility = Visibility.Collapsed;
+        OverallProgressBar.Value = 0;
+        ProgressText.Text = string.Empty;
+    }
+
+    private void ShowWarning(string message)
+    {
+        SetStatus(message);
+        System.Windows.MessageBox.Show(
+            this,
+            message,
+            "Ready or Not Mod Manager",
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
     }
 
     private void LogItemError(string operation, ModQueueItem item, Exception exception)
